@@ -5,6 +5,7 @@
 CC = i686-elf-gcc
 AS = i686-elf-as
 LD = i686-elf-ld
+NASM = nasm
 QEMU = qemu-system-i386
 
 # Flags
@@ -20,6 +21,7 @@ LIB_DIR = lib
 INCLUDE_DIR = include
 
 # Output
+BOOTLOADER_BIN = bootloader/boot.bin
 KERNEL_BIN = kernel.bin
 ISO_DIR = isodir
 ISO_FILE = CoreX.iso
@@ -63,7 +65,7 @@ debug: $(KERNEL_BIN)
 
 # Clean build artifacts
 clean:
-	rm -f $(ALL_OBJECTS) $(KERNEL_BIN)
+	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
 # Create bootable ISO (optional)
@@ -78,4 +80,14 @@ iso: $(KERNEL_BIN)
 	echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
 	grub-mkrescue -o $(ISO_FILE) $(ISO_DIR)
 
-.PHONY: all run debug clean iso
+# Build bootloader
+bootloader: $(BOOTLOADER_BIN)
+
+$(BOOTLOADER_BIN): bootloader/boot.asm
+	$(NASM) -f bin $< -o $@
+
+# Test bootloader in QEMU
+test-bootloader: $(BOOTLOADER_BIN)
+	$(QEMU) -drive format=raw,file=$(BOOTLOADER_BIN)
+
+.PHONY: all run debug clean iso bootloader test-bootloader
