@@ -22,7 +22,9 @@ INCLUDE_DIR = include
 
 # Output
 BOOTLOADER_BIN = bootloader/boot.bin
+KERNEL_ENTRY_BIN = kernel/kernel_entry.bin
 KERNEL_BIN = kernel.bin
+OS_IMAGE = os-image.bin
 ISO_DIR = isodir
 ISO_FILE = CoreX.iso
 
@@ -65,7 +67,7 @@ debug: $(KERNEL_BIN)
 
 # Clean build artifacts
 clean:
-	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN)
+	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
 # Create bootable ISO (optional)
@@ -86,8 +88,24 @@ bootloader: $(BOOTLOADER_BIN)
 $(BOOTLOADER_BIN): bootloader/boot.asm
 	$(NASM) -f bin $< -o $@
 
-# Test bootloader in QEMU
+# Build kernel entry
+kernel-entry: $(KERNEL_ENTRY_BIN)
+
+$(KERNEL_ENTRY_BIN): kernel/kernel_entry.asm
+	$(NASM) -f bin $< -o $@
+
+# Create bootable OS image (bootloader + kernel)
+os-image: $(OS_IMAGE)
+
+$(OS_IMAGE): $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN)
+	cat $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) > $(OS_IMAGE)
+
+# Run complete OS in QEMU
+run-os: $(OS_IMAGE)
+	$(QEMU) -drive format=raw,file=$(OS_IMAGE)
+
+# Test bootloader only (legacy)
 test-bootloader: $(BOOTLOADER_BIN)
 	$(QEMU) -drive format=raw,file=$(BOOTLOADER_BIN)
 
-.PHONY: all run debug clean iso bootloader test-bootloader
+.PHONY: all run debug clean iso bootloader kernel-entry os-image run-os test-bootloader
