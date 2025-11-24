@@ -90,17 +90,25 @@ $(BOOTLOADER_BIN): bootloader/boot.asm
 # Build kernel entry (assembly stub)
 KERNEL_STUB_OBJ = kernel/kernel_stub.o
 KERNEL_C_OBJ = kernel/kernel.o
+IDT_OBJ = kernel/idt.o
+ISR_OBJ = kernel/isr.o
 C_KERNEL_BIN = kernel/kernel_c.bin
 C_KERNEL_TMP = kernel/kernel_c.tmp
 
 $(KERNEL_STUB_OBJ): kernel/kernel_stub.asm
 	$(NASM) -f elf32 $< -o $@
 
+$(ISR_OBJ): kernel/isr.asm
+	$(NASM) -f elf32 $< -o $@
+
 $(KERNEL_C_OBJ): kernel/kernel.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(IDT_OBJ): kernel/idt.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Link C kernel (two-step process for Windows)
-$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ)
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ)
 	$(LD) -m i386pe -T kernel/linker.ld -o $(C_KERNEL_TMP) $^ --entry=_start
 	objcopy -O binary $(C_KERNEL_TMP) $@
 
@@ -135,7 +143,7 @@ test-bootloader: $(BOOTLOADER_BIN)
 # Clean build artifacts
 clean:
 	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
-	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
+	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
 .PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader

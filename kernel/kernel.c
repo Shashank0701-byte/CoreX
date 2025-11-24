@@ -1,6 +1,8 @@
 // CoreX Kernel - Main Entry Point
 // Minimal C kernel with VGA text mode output
 
+#include "idt.h"
+
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
 #define VGA_WIDTH 80
@@ -79,7 +81,7 @@ void kmain() {
     
     // Print welcome message
     print("=================================\n");
-    print("    CoreX Kernel v3.0 (C)\n");
+    print("    CoreX Kernel v3.1 (C)\n");
     print("=================================\n\n");
     
     print("Running in 32-bit Protected Mode\n");
@@ -87,17 +89,27 @@ void kmain() {
     print("A20 line enabled\n");
     print("VGA text mode initialized\n\n");
     
+    // Initialize IDT
+    print("Initializing IDT...\n");
+    idt_init();
+    print("\n");
+    
     print("Kernel features:\n");
     print("  - C language kernel\n");
     print("  - VGA text output\n");
-    print("  - Screen scrolling support\n\n");
+    print("  - Screen scrolling support\n");
+    print("  - IDT with exception handlers\n\n");
     
-    print("Memory address: ");
-    print_hex((unsigned int)vga_buffer);
-    print("\n\n");
+    print("System initialized successfully!\n\n");
     
-    print("System initialized successfully!\n");
-    print("Kernel halted.\n");
+    // Test exception handling (uncomment to test)
+    // print("Testing divide by zero exception...\n");
+    // int x = 1 / 0;  // This will trigger exception 0
+    
+    // print("Testing invalid opcode exception...\n");
+    // __asm__ __volatile__("ud2");  // This will trigger exception 6
+    
+    print("Kernel running. System stable.\n");
     
     // Halt the CPU
     while (1) {
