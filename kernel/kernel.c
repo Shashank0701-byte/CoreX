@@ -4,6 +4,7 @@
 #include "idt.h"
 #include "pic.h"
 #include "timer.h"
+#include "pmm.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -96,6 +97,41 @@ void kmain() {
     idt_init();
     print("\n");
     
+    // Initialize Physical Memory Manager
+    print("Initializing PMM...\n");
+    pmm_init();
+    print("\n");
+    
+    // Test PMM allocation
+    print("Testing PMM allocation...\n");
+    uint32_t page1 = pmm_alloc();
+    print("Allocated page at: ");
+    print_hex(page1);
+    print("\n");
+    
+    uint32_t page2 = pmm_alloc();
+    print("Allocated page at: ");
+    print_hex(page2);
+    print("\n");
+    
+    uint32_t page3 = pmm_alloc();
+    print("Allocated page at: ");
+    print_hex(page3);
+    print("\n");
+    
+    print("Free pages: ");
+    print_hex(pmm_get_free_pages());
+    print("\n");
+    
+    print("Freeing page: ");
+    print_hex(page2);
+    print("\n");
+    pmm_free(page2);
+    
+    print("Free pages after free: ");
+    print_hex(pmm_get_free_pages());
+    print("\n\n");
+    
     // Temporarily disabled to diagnose boot issue
     /*
     // Initialize PIC
@@ -119,6 +155,7 @@ void kmain() {
     print("  - VGA text output\n");
     print("  - Screen scrolling support\n");
     print("  - IDT with exception handlers\n");
+    print("  - Physical memory manager\n");
     //print("  - PIC interrupt controller\n");
     //print("  - PIT timer (100 Hz)\n\n");
     
