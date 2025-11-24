@@ -2,15 +2,14 @@
 # Simple x86 OS build system
 
 # Compiler and tools
-CC = i686-elf-gcc
-AS = i686-elf-as
-LD = i686-elf-ld
+CC = gcc
+LD = ld
 NASM = nasm
 QEMU = qemu-system-i386
 
 # Flags
-CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Iinclude
-LDFLAGS = -m elf_i386 -T linker.ld
+CFLAGS = -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc
+LDFLAGS = -m elf_i386 -T kernel/linker.ld --oformat binary
 ASFLAGS = --32
 
 # Directories
@@ -88,19 +87,44 @@ bootloader: $(BOOTLOADER_BIN)
 $(BOOTLOADER_BIN): bootloader/boot.asm
 	$(NASM) -f bin $< -o $@
 
-# Build kernel entry
+# Build kernel entry (assembly stub)
+KERNEL_STUB_OBJ = kernel/kernel_stub.o
+KERNEL_C_OBJ = kernel/kernel.o
+C_KERNEL_BIN = kernel/kernel_c.bin
+C_KERNEL_TMP = kernel/kernel_c.tmp
+
+$(KERNEL_STUB_OBJ): kernel/kernel_stub.asm
+	$(NASM) -f elf32 $< -o $@
+
+$(KERNEL_C_OBJ): kernel/kernel.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link C kernel (two-step process for Windows)
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ)
+	$(LD) -m i386pe -T kernel/linker.ld -o $(C_KERNEL_TMP) $^ --entry=_start
+	objcopy -O binary $(C_KERNEL_TMP) $@
+
+# Build assembly-only kernel (legacy)
 kernel-entry: $(KERNEL_ENTRY_BIN)
 
 $(KERNEL_ENTRY_BIN): kernel/kernel_entry.asm
 	$(NASM) -f bin $< -o $@
 
-# Create bootable OS image (bootloader + kernel)
+# Create bootable OS image with C kernel
+os-image-c: $(BOOTLOADER_BIN) $(C_KERNEL_BIN)
+	cat $(BOOTLOADER_BIN) $(C_KERNEL_BIN) > $(OS_IMAGE)
+
+# Create bootable OS image with assembly kernel (legacy)
 os-image: $(OS_IMAGE)
 
 $(OS_IMAGE): $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN)
 	cat $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) > $(OS_IMAGE)
 
-# Run complete OS in QEMU
+# Run complete OS with C kernel in QEMU
+run-c-os: os-image-c
+	$(QEMU) -drive format=raw,file=$(OS_IMAGE)
+
+# Run complete OS with assembly kernel in QEMU (legacy)
 run-os: $(OS_IMAGE)
 	$(QEMU) -drive format=raw,file=$(OS_IMAGE)
 
@@ -108,4 +132,10 @@ run-os: $(OS_IMAGE)
 test-bootloader: $(BOOTLOADER_BIN)
 	$(QEMU) -drive format=raw,file=$(BOOTLOADER_BIN)
 
-.PHONY: all run debug clean iso bootloader kernel-entry os-image run-os test-bootloader
+# Clean build artifacts
+clean:
+	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
+	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
+	rm -rf $(ISO_DIR) $(ISO_FILE)
+
+.PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader
