@@ -121,10 +121,7 @@ void keyboard_handler() {
                 }
                 
                 if (ascii != 0) {
-                    // Echo to screen
-                    putchar(ascii);
-                    
-                    // Add to buffer
+                    // Add to buffer (shell will handle echo)
                     keyboard_buffer_add(ascii);
                 }
             }

@@ -7,6 +7,7 @@
 #include "pmm.h"
 #include "paging.h"
 #include "keyboard.h"
+#include "shell.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -35,6 +36,13 @@ void putchar(char c) {
     if (c == '\n') {
         cursor_x = 0;
         cursor_y++;
+    } else if (c == '\b') {
+        // Backspace
+        if (cursor_x > 0) {
+            cursor_x--;
+            unsigned int offset = cursor_y * VGA_WIDTH + cursor_x;
+            vga_buffer[offset] = (WHITE_ON_BLACK << 8) | ' ';
+        }
     } else {
         unsigned int offset = cursor_y * VGA_WIDTH + cursor_x;
         vga_buffer[offset] = (WHITE_ON_BLACK << 8) | c;
@@ -186,15 +194,18 @@ void kmain() {
     print("  - IDT with exception handlers\n");
     print("  - Physical memory manager\n");
     print("  - PS/2 keyboard driver\n");
+    print("  - Interactive shell\n");
     //print("  - 4KB paging with identity mapping\n");
     //print("  - PIC interrupt controller\n");
     //print("  - PIT timer (100 Hz)\n\n");
     
-    print("System initialized successfully!\n\n");
+    print("\nSystem initialized successfully!\n");
     
-    print("Type something (keyboard input enabled):\n");
+    // Initialize and run shell
+    shell_init();
+    shell_run();
     
-    // Kernel main loop - just halt
+    // Should never reach here
     while (1) {
         __asm__ __volatile__("hlt");
     }
