@@ -2,6 +2,8 @@
 // Minimal C kernel with VGA text mode output
 
 #include "idt.h"
+#include "pic.h"
+#include "timer.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -81,7 +83,7 @@ void kmain() {
     
     // Print welcome message
     print("=================================\n");
-    print("    CoreX Kernel v3.1 (C)\n");
+    print("    CoreX Kernel v3.2 (C)\n");
     print("=================================\n\n");
     
     print("Running in 32-bit Protected Mode\n");
@@ -94,11 +96,31 @@ void kmain() {
     idt_init();
     print("\n");
     
+    // Temporarily disabled to diagnose boot issue
+    /*
+    // Initialize PIC
+    print("Initializing PIC...\n");
+    pic_init();
+    print("PIC remapped to IRQ 32-47\n\n");
+    
+    // Initialize timer (100 Hz)
+    print("Initializing timer...\n");
+    timer_init(100);
+    print("\n");
+    
+    // Enable interrupts
+    print("Enabling interrupts...\n");
+    __asm__ __volatile__("sti");
+    print("Interrupts enabled\n\n");
+    */
+    
     print("Kernel features:\n");
     print("  - C language kernel\n");
     print("  - VGA text output\n");
     print("  - Screen scrolling support\n");
-    print("  - IDT with exception handlers\n\n");
+    print("  - IDT with exception handlers\n");
+    //print("  - PIC interrupt controller\n");
+    //print("  - PIT timer (100 Hz)\n\n");
     
     print("System initialized successfully!\n\n");
     

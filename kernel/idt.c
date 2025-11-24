@@ -46,6 +46,24 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
+// External assembly IRQ handlers
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
+extern void irq13();
+extern void irq14();
+extern void irq15();
+
 // External function to load IDT
 extern void idt_load(uint32_t);
 
@@ -140,10 +158,28 @@ void idt_init() {
     idt_set_gate(30, (uint32_t)isr30, 0x08, 0x8E);
     idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
 
+    // Install IRQ handlers (32-47)
+    idt_set_gate(32, (uint32_t)irq0, 0x08, 0x8E);
+    idt_set_gate(33, (uint32_t)irq1, 0x08, 0x8E);
+    idt_set_gate(34, (uint32_t)irq2, 0x08, 0x8E);
+    idt_set_gate(35, (uint32_t)irq3, 0x08, 0x8E);
+    idt_set_gate(36, (uint32_t)irq4, 0x08, 0x8E);
+    idt_set_gate(37, (uint32_t)irq5, 0x08, 0x8E);
+    idt_set_gate(38, (uint32_t)irq6, 0x08, 0x8E);
+    idt_set_gate(39, (uint32_t)irq7, 0x08, 0x8E);
+    idt_set_gate(40, (uint32_t)irq8, 0x08, 0x8E);
+    idt_set_gate(41, (uint32_t)irq9, 0x08, 0x8E);
+    idt_set_gate(42, (uint32_t)irq10, 0x08, 0x8E);
+    idt_set_gate(43, (uint32_t)irq11, 0x08, 0x8E);
+    idt_set_gate(44, (uint32_t)irq12, 0x08, 0x8E);
+    idt_set_gate(45, (uint32_t)irq13, 0x08, 0x8E);
+    idt_set_gate(46, (uint32_t)irq14, 0x08, 0x8E);
+    idt_set_gate(47, (uint32_t)irq15, 0x08, 0x8E);
+
     // Load IDT
     idt_load((uint32_t)&idtp);
     
-    print("IDT initialized with 32 exception handlers\n");
+    print("IDT initialized with 32 exception handlers and 16 IRQ handlers\n");
 }
 
 // Exception handler called from assembly
@@ -168,5 +204,33 @@ void exception_handler(uint32_t int_no, uint32_t err_code) {
     // Halt the system
     while(1) {
         __asm__ __volatile__("cli; hlt");
+    }
+}
+
+// IRQ handler called from assembly
+// External timer handler
+extern void timer_handler();
+
+void irq_handler(uint32_t int_no, uint32_t err_code) {
+    // Unused parameter
+    (void)err_code;
+    
+    // Convert interrupt number to IRQ number (32-47 -> 0-15)
+    uint8_t irq_num = int_no - 32;
+    
+    // Dispatch to specific IRQ handler
+    switch(irq_num) {
+        case 0:
+            // Timer IRQ
+            timer_handler();
+            break;
+        
+        case 1:
+            // Keyboard IRQ (not implemented yet)
+            break;
+        
+        default:
+            // Unhandled IRQ
+            break;
     }
 }
