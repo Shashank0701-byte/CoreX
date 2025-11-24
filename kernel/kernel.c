@@ -5,6 +5,7 @@
 #include "pic.h"
 #include "timer.h"
 #include "pmm.h"
+#include "paging.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -132,6 +133,28 @@ void kmain() {
     print_hex(pmm_get_free_pages());
     print("\n\n");
     
+    // Temporarily disabled - paging causes crash
+    /*
+    // Initialize Paging
+    print("Initializing paging...\n");
+    paging_init();
+    print("\n");
+    
+    // Test page mapping
+    print("Testing page mapping...\n");
+    uint32_t test_virt = 0x00400000;  // 4MB virtual address
+    uint32_t test_phys = pmm_alloc();  // Allocate physical page
+    
+    print("Mapping virtual ");
+    print_hex(test_virt);
+    print(" to physical ");
+    print_hex(test_phys);
+    print("\n");
+    
+    map_page(test_virt, test_phys, PAGE_WRITE);
+    print("Page mapped successfully!\n\n");
+    */
+    
     // Temporarily disabled to diagnose boot issue
     /*
     // Initialize PIC
@@ -156,6 +179,7 @@ void kmain() {
     print("  - Screen scrolling support\n");
     print("  - IDT with exception handlers\n");
     print("  - Physical memory manager\n");
+    //print("  - 4KB paging with identity mapping\n");
     //print("  - PIC interrupt controller\n");
     //print("  - PIT timer (100 Hz)\n\n");
     
