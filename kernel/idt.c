@@ -210,6 +210,7 @@ void exception_handler(uint32_t int_no, uint32_t err_code) {
 // IRQ handler called from assembly
 // External timer handler
 extern void timer_handler();
+extern void keyboard_handler();
 
 void irq_handler(uint32_t int_no, uint32_t err_code) {
     // Unused parameter
@@ -226,7 +227,8 @@ void irq_handler(uint32_t int_no, uint32_t err_code) {
             break;
         
         case 1:
-            // Keyboard IRQ (not implemented yet)
+            // Keyboard IRQ
+            keyboard_handler();
             break;
         
         default:

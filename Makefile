@@ -96,6 +96,7 @@ PIC_OBJ = kernel/pic.o
 TIMER_OBJ = kernel/timer.o
 PMM_OBJ = kernel/pmm.o
 PAGING_OBJ = kernel/paging.o
+KEYBOARD_OBJ = kernel/keyboard.o
 C_KERNEL_BIN = kernel/kernel_c.bin
 C_KERNEL_TMP = kernel/kernel_c.tmp
 
@@ -123,8 +124,11 @@ $(PMM_OBJ): kernel/pmm.c
 $(PAGING_OBJ): kernel/paging.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(KEYBOARD_OBJ): kernel/keyboard.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Link C kernel (two-step process for Windows)
-$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ)
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ)
 	$(LD) -m i386pe -T kernel/linker.ld -o $(C_KERNEL_TMP) $^ --entry=_start
 	objcopy -O binary $(C_KERNEL_TMP) $@
 
@@ -159,7 +163,7 @@ test-bootloader: $(BOOTLOADER_BIN)
 # Clean build artifacts
 clean:
 	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
-	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
+	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
 .PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader

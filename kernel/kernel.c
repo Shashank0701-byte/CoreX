@@ -6,6 +6,7 @@
 #include "timer.h"
 #include "pmm.h"
 #include "paging.h"
+#include "keyboard.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -155,23 +156,28 @@ void kmain() {
     print("Page mapped successfully!\n\n");
     */
     
-    // Temporarily disabled to diagnose boot issue
-    /*
-    // Initialize PIC
+    // Initialize PIC (needed for keyboard)
     print("Initializing PIC...\n");
     pic_init();
     print("PIC remapped to IRQ 32-47\n\n");
     
+    // Initialize keyboard
+    print("Initializing keyboard...\n");
+    keyboard_init();
+    print("\n");
+    
+    // Timer disabled for now
+    /*
     // Initialize timer (100 Hz)
     print("Initializing timer...\n");
     timer_init(100);
     print("\n");
+    */
     
     // Enable interrupts
     print("Enabling interrupts...\n");
     __asm__ __volatile__("sti");
     print("Interrupts enabled\n\n");
-    */
     
     print("Kernel features:\n");
     print("  - C language kernel\n");
@@ -179,22 +185,16 @@ void kmain() {
     print("  - Screen scrolling support\n");
     print("  - IDT with exception handlers\n");
     print("  - Physical memory manager\n");
+    print("  - PS/2 keyboard driver\n");
     //print("  - 4KB paging with identity mapping\n");
     //print("  - PIC interrupt controller\n");
     //print("  - PIT timer (100 Hz)\n\n");
     
     print("System initialized successfully!\n\n");
     
-    // Test exception handling (uncomment to test)
-    // print("Testing divide by zero exception...\n");
-    // int x = 1 / 0;  // This will trigger exception 0
+    print("Type something (keyboard input enabled):\n");
     
-    // print("Testing invalid opcode exception...\n");
-    // __asm__ __volatile__("ud2");  // This will trigger exception 6
-    
-    print("Kernel running. System stable.\n");
-    
-    // Halt the CPU
+    // Kernel main loop - just halt
     while (1) {
         __asm__ __volatile__("hlt");
     }
