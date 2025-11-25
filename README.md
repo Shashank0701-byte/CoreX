@@ -174,8 +174,8 @@ This project is open source and available under the MIT License.
 ## 👤 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- GitHub: [Shashank0701-byte]([https://github.com/yourusername](https://github.com/Shashank0701-byte))
+- LinkedIn: [Shashank_Chakraborty]([https://linkedin.com/in/yourprofile)](https://www.linkedin.com/in/shashank-chakraborty/)
 
 ---
 
