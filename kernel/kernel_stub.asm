@@ -8,7 +8,7 @@
 ; Entry point - this is where the bootloader jumps
 global _start
 _start:
-    ; Set up segment registers (already done by bootloader, but ensure)
+    ; Set up segment registers
     mov ax, 0x10        ; Data segment selector
     mov ds, ax
     mov es, ax

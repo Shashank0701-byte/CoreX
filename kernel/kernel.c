@@ -22,6 +22,30 @@ static unsigned short* vga_buffer = (unsigned short*)VGA_MEMORY;
 static unsigned int cursor_x = 0;
 static unsigned int cursor_y = 0;
 
+// Port I/O functions
+static inline void outb(unsigned short port, unsigned char value) {
+    __asm__ __volatile__("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+static inline unsigned char inb(unsigned short port) {
+    unsigned char ret;
+    __asm__ __volatile__("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+}
+
+// Function: update_cursor
+// Updates the VGA hardware cursor position
+void update_cursor() {
+    unsigned short position = cursor_y * VGA_WIDTH + cursor_x;
+    
+    // Cursor LOW port to VGA INDEX register
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (unsigned char)(position & 0xFF));
+    // Cursor HIGH port to VGA INDEX register
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (unsigned char)((position >> 8) & 0xFF));
+}
+
 // Function: clear_screen
 // Clears the VGA text mode screen
 void clear_screen() {
@@ -30,6 +54,7 @@ void clear_screen() {
     }
     cursor_x = 0;
     cursor_y = 0;
+    update_cursor();
 }
 
 // Function: putchar
@@ -68,6 +93,9 @@ void putchar(char c) {
             vga_buffer[i] = (WHITE_ON_BLACK << 8) | ' ';
         }
     }
+    
+    // Update hardware cursor - DISABLED FOR TESTING
+    // update_cursor();
 }
 
 // Function: print
@@ -95,123 +123,19 @@ void kmain() {
     clear_screen();
     
     // Print welcome message
-    print("=================================\n");
-    print("    CoreX Kernel v3.2 (C)\n");
-    print("=================================\n\n");
-    
-    print("Running in 32-bit Protected Mode\n");
-    print("GDT loaded successfully\n");
-    print("A20 line enabled\n");
-    print("VGA text mode initialized\n\n");
+    print("CoreX OS v3.0\n\n");
     
     // Initialize IDT
-    print("Initializing IDT...\n");
     idt_init();
-    print("\n");
     
-    // Initialize Physical Memory Manager
-    print("Initializing PMM...\n");
-    pmm_init();
-    print("\n");
-    
-    // Test PMM allocation
-    print("Testing PMM allocation...\n");
-    uint32_t page1 = pmm_alloc();
-    print("Allocated page at: ");
-    print_hex(page1);
-    print("\n");
-    
-    uint32_t page2 = pmm_alloc();
-    print("Allocated page at: ");
-    print_hex(page2);
-    print("\n");
-    
-    uint32_t page3 = pmm_alloc();
-    print("Allocated page at: ");
-    print_hex(page3);
-    print("\n");
-    
-    print("Free pages: ");
-    print_hex(pmm_get_free_pages());
-    print("\n");
-    
-    print("Freeing page: ");
-    print_hex(page2);
-    print("\n");
-    pmm_free(page2);
-    
-    print("Free pages after free: ");
-    print_hex(pmm_get_free_pages());
-    print("\n\n");
-    
-    // Temporarily disabled - paging causes crash
-    /*
-    // Initialize Paging
-    print("Initializing paging...\n");
-    paging_init();
-    print("\n");
-    
-    // Test page mapping
-    print("Testing page mapping...\n");
-    uint32_t test_virt = 0x00400000;  // 4MB virtual address
-    uint32_t test_phys = pmm_alloc();  // Allocate physical page
-    
-    print("Mapping virtual ");
-    print_hex(test_virt);
-    print(" to physical ");
-    print_hex(test_phys);
-    print("\n");
-    
-    map_page(test_virt, test_phys, PAGE_WRITE);
-    print("Page mapped successfully!\n\n");
-    */
-    
-    // Initialize PIC (needed for keyboard)
-    print("Initializing PIC...\n");
+    // Initialize PIC
     pic_init();
-    print("PIC remapped to IRQ 32-47\n\n");
     
     // Initialize keyboard
-    print("Initializing keyboard...\n");
     keyboard_init();
-    print("\n");
-    
-    // Initialize scheduler
-    print("Initializing scheduler...\n");
-    scheduler_init();
-    print("\n");
-    
-    // Initialize file system
-    // print("Initializing file system...\n");
-    // fs_init();
-    // print("\n");
-    
-    // Initialize timer (100 Hz) for task switching
-    print("Initializing timer...\n");
-    // timer_init(100);
-    print("Timer disabled for stability\n");
-    print("\n");
     
     // Enable interrupts
-    // print("Enabling interrupts...\n");
-    // __asm__ __volatile__("sti");
-    // print("Interrupts enabled\n\n");
-    
-    print("Kernel features:\n");
-    print("  - C language kernel\n");
-    print("  - VGA text output\n");
-    print("  - Screen scrolling support\n");
-    print("  - IDT with exception handlers\n");
-    print("  - Physical memory manager\n");
-    print("  - PS/2 keyboard driver\n");
-    print("  - Interactive shell\n");
-    print("  - Cooperative task scheduler\n");
-    print("  - In-memory file system\n");
-    //print("  - 4KB paging with identity mapping\n");
-    //print("  - PIC interrupt controller\n");
-    //print("  - PIT timer (100 Hz)\n\n");
-    
-    print("\nSystem initialized successfully!\n");
+    __asm__ __volatile__("sti");
     
     // Initialize and run shell
     shell_init();

@@ -78,52 +78,18 @@ static void keyboard_buffer_add(char c) {
     }
 }
 
-// Keyboard interrupt handler
+// Keyboard interrupt handler - USE BUFFER
 void keyboard_handler() {
     uint8_t scancode = inb(KEYBOARD_DATA_PORT);
     
-    // Check if this is a key release (bit 7 set)
-    if (scancode & 0x80) {
-        // Key released
-        scancode &= 0x7F;  // Remove release bit
-        
-        if (scancode == KEY_LSHIFT || scancode == KEY_RSHIFT) {
-            shift_pressed = 0;
-        } else if (scancode == KEY_LCTRL) {
-            ctrl_pressed = 0;
-        } else if (scancode == KEY_LALT) {
-            alt_pressed = 0;
-        }
-    } else {
-        // Key pressed
-        if (scancode == KEY_LSHIFT || scancode == KEY_RSHIFT) {
-            shift_pressed = 1;
-        } else if (scancode == KEY_LCTRL) {
-            ctrl_pressed = 1;
-        } else if (scancode == KEY_LALT) {
-            alt_pressed = 1;
-        } else if (scancode == KEY_CAPSLOCK) {
-            caps_lock = !caps_lock;
-        } else {
-            // Convert scancode to ASCII
-            char ascii = 0;
-            
-            if (scancode < sizeof(scancode_to_ascii)) {
-                if (shift_pressed) {
-                    ascii = scancode_to_ascii_shift[scancode];
-                } else {
-                    ascii = scancode_to_ascii[scancode];
-                    
-                    // Apply caps lock to letters
-                    if (caps_lock && ascii >= 'a' && ascii <= 'z') {
-                        ascii = ascii - 'a' + 'A';
-                    }
-                }
-                
-                if (ascii != 0) {
-                    // Add to buffer (shell will handle echo)
-                    keyboard_buffer_add(ascii);
-                }
+    // Only handle key presses (not releases)
+    if (!(scancode & 0x80)) {
+        // Convert scancode to ASCII (simple version)
+        if (scancode < sizeof(scancode_to_ascii)) {
+            char ascii = scancode_to_ascii[scancode];
+            if (ascii != 0) {
+                // Add to buffer (NOT direct putchar!)
+                keyboard_buffer_add(ascii);
             }
         }
     }

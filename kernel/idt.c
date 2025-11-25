@@ -212,27 +212,8 @@ void exception_handler(uint32_t int_no, uint32_t err_code) {
 extern void timer_handler();
 extern void keyboard_handler();
 
-void irq_handler(uint32_t int_no, uint32_t err_code) {
-    // Unused parameter
-    (void)err_code;
-    
-    // Convert interrupt number to IRQ number (32-47 -> 0-15)
-    uint8_t irq_num = int_no - 32;
-    
-    // Dispatch to specific IRQ handler
-    switch(irq_num) {
-        case 0:
-            // Timer IRQ
-            timer_handler();
-            break;
-        
-        case 1:
-            // Keyboard IRQ
-            keyboard_handler();
-            break;
-        
-        default:
-            // Unhandled IRQ
-            break;
-    }
+void irq_handler() {
+    // Just call keyboard handler directly
+    // (We only have keyboard IRQ enabled anyway)
+    keyboard_handler();
 }

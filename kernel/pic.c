@@ -39,9 +39,9 @@ void pic_init() {
     outb(PIC1_DATA, 0x01);      // 8086 mode
     outb(PIC2_DATA, 0x01);      // 8086 mode
     
-    // Restore masks
-    outb(PIC1_DATA, mask1);
-    outb(PIC2_DATA, mask2);
+    // Mask all IRQs except keyboard (IRQ1)
+    outb(PIC1_DATA, 0xFD);      // 11111101 - only IRQ1 unmasked
+    outb(PIC2_DATA, 0xFF);      // 11111111 - all slave IRQs masked
 }
 
 // Send End of Interrupt signal

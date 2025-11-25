@@ -1,4 +1,4 @@
-/* Linker script for CoreX kernel */
+/* Linker script for CoreX kernel (Multiboot/GRUB compatible) */
 
 ENTRY(_start)           /* Entry point is _start from kernel_stub.asm */
 

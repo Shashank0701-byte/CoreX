@@ -1,94 +1,77 @@
-# CoreX OS
+# CoreX OS - A Custom x86 Operating System
 
-A simple x86 operating system written from scratch in C and Assembly, featuring a custom bootloader, protected mode kernel, and hardware interrupt handling.
+![OS Development](https://img.shields.io/badge/OS-Development-blue)
+![Language](https://img.shields.io/badge/Language-C%20%7C%20Assembly-green)
+![Architecture](https://img.shields.io/badge/Architecture-x86-orange)
 
-![OS Type](https://img.shields.io/badge/OS-x86-blue)
-![Language](https://img.shields.io/badge/Language-C%20%2B%20Assembly-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+A custom 32-bit operating system built from scratch in C and x86 Assembly, demonstrating low-level systems programming and OS development concepts.
 
-## 🎯 Features
+## 🚀 Features
 
-### Bootloader
-- ✅ 512-byte NASM bootloader with boot signature
-- ✅ Loads kernel from disk (sector 2+)
-- ✅ Switches from 16-bit real mode to 32-bit protected mode
-- ✅ Sets up GDT (Global Descriptor Table)
-- ✅ Enables A20 line for extended memory access
-- ✅ VGA text mode initialization
+### Core System
+- **Custom Bootloader** - Written in x86 Assembly, loads kernel into memory
+- **32-bit Protected Mode** - Full transition from Real Mode to Protected Mode
+- **GDT (Global Descriptor Table)** - Proper memory segmentation setup
+- **IDT (Interrupt Descriptor Table)** - 32 exception handlers + 16 IRQ handlers
+- **PIC (Programmable Interrupt Controller)** - IRQ remapping to avoid conflicts
 
-### Kernel
-- ✅ Written in C with minimal assembly
-- ✅ 32-bit protected mode execution
-- ✅ VGA text buffer output (0xB8000)
-- ✅ Screen scrolling support
-- ✅ Custom print functions (print, putchar, print_hex)
+### Memory Management
+- **Physical Memory Manager (PMM)** - Bitmap-based page frame allocator
+- **Paging Support** - 4KB page tables with identity mapping
+- **Dynamic Memory Allocation** - Page-level memory allocation and deallocation
 
-### Interrupt Handling
-- ✅ IDT (Interrupt Descriptor Table) with 256 entries
-- ✅ 32 CPU exception handlers (divide by zero, page fault, etc.)
-- ✅ 16 hardware IRQ handlers (IRQ0-IRQ15)
-- ✅ PIC (Programmable Interrupt Controller) remapping
-- ✅ PIT (Programmable Interval Timer) at 100 Hz
-- ✅ Exception messages with interrupt number and error code
+### I/O & Drivers
+- **VGA Text Mode Driver** - 80x25 color text output with scrolling
+- **PS/2 Keyboard Driver** - Scancode to ASCII conversion with shift/caps support
+- **PIT Timer** - Programmable Interval Timer for time-based operations
 
-## 📁 Project Structure
+### User Interface
+- **Interactive Shell** - Command-line interface with multiple built-in commands
+  - `help` - Display available commands
+  - `clear` - Clear the screen
+  - `version` - Show OS version information
+  - `meminfo` - Display memory statistics
+  - `echo` - Echo text to screen
+
+### File System
+- **In-Memory File System** - Simple file creation, reading, and deletion
+- **Directory Support** - Basic directory structure
+
+## 🏗️ Architecture
 
 ```
-CoreX/
-├── bootloader/         # Boot sector code
-│   ├── boot.asm       # NASM bootloader (512 bytes)
-│   └── README.md      # Bootloader documentation
-├── kernel/            # Kernel source code
-│   ├── kernel.c       # Main kernel entry point
-│   ├── kernel_stub.asm # Assembly entry stub
-│   ├── idt.c          # Interrupt Descriptor Table
-│   ├── isr.asm        # Interrupt Service Routines
-│   ├── pic.c          # PIC controller
-│   ├── timer.c        # PIT timer
-│   └── linker.ld      # Linker script
-├── include/           # Header files
-│   ├── idt.h
-│   ├── pic.h
-│   ├── timer.h
-│   └── stdint.h
-├── drivers/           # Device drivers (future)
-├── lib/               # Utility libraries (future)
-├── Makefile           # Build system
-├── README.md          # This file
-└── LICENSE            # MIT License
+CoreX OS
+├── Bootloader (Assembly)
+│   ├── Stage 1: Boot sector (512 bytes)
+│   └── Stage 2: Kernel loader
+├── Kernel (C + Assembly)
+│   ├── Core
+│   │   ├── Entry point (kernel_stub.asm)
+│   │   ├── Main kernel (kernel.c)
+│   │   └── Interrupt handlers (isr.asm)
+│   ├── Memory Management
+│   │   ├── PMM (pmm.c)
+│   │   └── Paging (paging.c)
+│   ├── Drivers
+│   │   ├── VGA (kernel.c)
+│   │   ├── Keyboard (keyboard.c)
+│   │   └── Timer (timer.c)
+│   └── System
+│       ├── IDT (idt.c)
+│       ├── PIC (pic.c)
+│       ├── Shell (shell.c)
+│       └── File System (fs.c)
 ```
 
-## 🛠️ Prerequisites
+## 🛠️ Building
 
-### Required Tools
+### Prerequisites
+- **NASM** - Netwide Assembler
+- **GCC** - GNU Compiler Collection (with `-m32` support)
+- **LD** - GNU Linker
+- **QEMU** - For testing (qemu-system-i386)
 
-1. **NASM** - Netwide Assembler
-   ```bash
-   # Windows
-   choco install nasm
-   
-   # Linux
-   sudo apt-get install nasm
-   ```
-
-2. **GCC** - GNU Compiler Collection (32-bit support)
-   ```bash
-   # Linux
-   sudo apt-get install gcc-multilib
-   ```
-
-3. **QEMU** - For testing and emulation
-   ```bash
-   # Windows
-   choco install qemu
-   
-   # Linux
-   sudo apt-get install qemu-system-x86
-   ```
-
-## 🚀 Building and Running
-
-### Quick Start
+### Build Commands
 
 ```bash
 # Build bootloader
@@ -97,113 +80,103 @@ nasm -f bin bootloader/boot.asm -o bootloader/boot.bin
 # Build kernel
 nasm -f elf32 kernel/kernel_stub.asm -o kernel/kernel_stub.o
 nasm -f elf32 kernel/isr.asm -o kernel/isr.o
-gcc -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc -c kernel/kernel.c -o kernel/kernel.o
-gcc -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc -c kernel/idt.c -o kernel/idt.o
-gcc -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc -c kernel/pic.c -o kernel/pic.o
-gcc -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc -c kernel/timer.c -o kernel/timer.o
-
-# Link kernel
-ld -m i386pe -T kernel/linker.ld -o kernel/kernel_c.tmp kernel/kernel_stub.o kernel/kernel.o kernel/idt.o kernel/isr.o kernel/pic.o kernel/timer.o --entry=_start
-objcopy -O binary kernel/kernel_c.tmp kernel/kernel_c.bin
+gcc -m32 -ffreestanding -c kernel/*.c -Iinclude
+ld -m i386pe -T kernel/linker.ld -o kernel/kernel.bin <objects>
 
 # Create OS image
-cat bootloader/boot.bin kernel/kernel_c.bin > os-image.bin
+cat bootloader/boot.bin kernel/kernel.bin > os-image.bin
 
 # Run in QEMU
 qemu-system-i386 -drive format=raw,file=os-image.bin
 ```
 
-### Using Makefile (if make is available)
-
+Or use the provided Makefile:
 ```bash
-make os-image-c    # Build OS image
-make run-c-os      # Build and run in QEMU
-make clean         # Clean build artifacts
+make all
+make run
 ```
 
-## 🎮 What You'll See
+## 🎯 Technical Highlights
 
-When you run CoreX in QEMU, you'll see:
+### Low-Level Programming
+- Direct hardware manipulation via port I/O
+- Inline assembly for critical operations
+- Manual stack and register management
+- Interrupt handling in Assembly
 
-```
-=================================
-    CoreX Kernel v3.2 (C)
-=================================
+### Systems Concepts
+- Bootloader development and disk I/O
+- CPU mode transitions (Real → Protected)
+- Memory segmentation and paging
+- Interrupt-driven I/O
+- Device driver development
 
-Running in 32-bit Protected Mode
-GDT loaded successfully
-A20 line enabled
-VGA text mode initialized
+### Code Quality
+- Modular architecture with clear separation of concerns
+- Comprehensive comments and documentation
+- Proper error handling
+- Clean code structure following OS development best practices
 
-Initializing IDT...
-IDT initialized with 32 exception handlers and 16 IRQ handlers
+## 📚 Learning Outcomes
 
-Kernel features:
-  - C language kernel
-  - VGA text output
-  - Screen scrolling support
-  - IDT with exception handlers
-
-System initialized successfully!
-
-Kernel running. System stable.
-```
+This project demonstrates proficiency in:
+- **Low-level programming** (C, x86 Assembly)
+- **Operating system concepts** (memory management, process scheduling, I/O)
+- **Hardware interaction** (BIOS, VGA, keyboard, timer)
+- **Systems architecture** (x86 architecture, interrupts, paging)
+- **Debugging** (QEMU, GDB, serial debugging)
 
 ## 🔧 Current Status
 
-### Working
-- ✅ Bootloader loads and executes kernel
-- ✅ Protected mode with GDT
-- ✅ VGA text output
-- ✅ IDT with exception handlers
-- ✅ PIC and timer code (disabled by default)
+**Working:**
+- ✅ Bootloader successfully loads kernel
+- ✅ Protected mode transition
+- ✅ IDT with exception and IRQ handlers
+- ✅ VGA text output with scrolling
+- ✅ Physical memory manager
+- ✅ Shell command system
+- ✅ File system operations
 
-### In Progress
-- ⏳ Hardware interrupts (timer disabled to prevent boot issues)
-- ⏳ Keyboard input
-- ⏳ Memory management
+**In Development:**
+- 🔨 Interactive keyboard input (hardware interrupt handling)
+- 🔨 Multi-tasking scheduler
+- 🔨 Virtual file system
+- 🔨 Network stack
 
-### Planned
-- 📋 File system
-- 📋 User mode
-- 📋 Multitasking
+## 📸 Screenshots
 
-## 🧪 Testing Exception Handlers
+![CoreX OS Boot](docs/screenshot-boot.png)
+*CoreX OS booting and initializing subsystems*
 
-To test the exception handling, uncomment one of these lines in `kernel/kernel.c`:
+![Shell Interface](docs/screenshot-shell.png)
+*Interactive shell with command support*
 
-```c
-// Test divide by zero
-int x = 1 / 0;
+## 🎓 Educational Value
 
-// Test invalid opcode
-__asm__ __volatile__("ud2");
-```
+This project was built as a learning exercise to understand:
+- How operating systems work at the lowest level
+- The boot process from power-on to running code
+- Memory management and virtual memory
+- Hardware abstraction and device drivers
+- System call interfaces
 
-You'll see the exception handler display the error details!
-
-## 📚 Resources
+## 📖 Resources Used
 
 - [OSDev Wiki](https://wiki.osdev.org/)
-- [NASM Documentation](https://www.nasm.us/docs.php)
-- [Intel x86 Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
-- [Writing a Simple Operating System from Scratch](https://www.cs.bham.ac.uk/~exr/lectures/opsys/10_11/lectures/os-dev.pdf)
+- Intel x86 Architecture Manuals
+- "Operating Systems: Three Easy Pieces" by Remzi H. Arpaci-Dusseau
+- Various OS development tutorials and documentation
 
-## 📄 License
+## 📝 License
 
-MIT License - See [LICENSE](LICENSE) file for details
+This project is open source and available under the MIT License.
 
-## 🤝 Contributing
+## 👤 Author
 
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest features
-- Submit pull requests
-
-## 👨‍💻 Author
-
-Built as a learning project to understand OS fundamentals from the ground up.
+**Your Name**
+- GitHub: [@yourusername](https://github.com/yourusername)
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
 
 ---
 
-**Note:** This is an educational OS project. It's not intended for production use.
+*Built with ❤️ and lots of debugging*

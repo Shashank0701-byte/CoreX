@@ -155,15 +155,8 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
     
-    ; Push stack pointer
-    mov eax, esp
-    push eax
-    
-    ; Call C IRQ handler
+    ; Call C IRQ handler (cdecl calling convention)
     call _irq_handler
-    
-    ; Clean up
-    pop eax
     
     ; Restore segment registers
     pop gs

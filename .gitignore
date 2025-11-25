@@ -1,14 +1,24 @@
-# Build artifacts
-*.bin
+# Object files
 *.o
+*.obj
+*.elf
+*.tmp
+
+# Binary files
+*.bin
+*.img
 *.iso
 
-# Build directories
-isodir/
+# OS image
+os-image.bin
+os-image.img
 
-# OS-specific files
-.DS_Store
-Thumbs.db
+# Build artifacts
+kernel/kernel_c.bin
+kernel/kernel_c.tmp
+kernel/corex.elf
+kernel/corex.tmp
+bootloader/boot.bin
 
 # Editor files
 *.swp
@@ -17,6 +27,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Temporary files
-*.tmp
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
