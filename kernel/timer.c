@@ -56,8 +56,8 @@ void timer_handler() {
     */
     
     // Call scheduler for task switching
-    extern void schedule();
-    schedule();
+    // extern void schedule();
+    // schedule();
     
     // Send EOI to PIC
     pic_send_eoi(0);

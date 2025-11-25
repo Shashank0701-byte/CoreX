@@ -20,7 +20,12 @@ extern void switch_task(uint32_t* old_esp, uint32_t new_esp);
 
 // Task entry wrapper
 static void task_entry() {
+    // Enable interrupts (new tasks start with IF=0 from switch_task)
+    __asm__ __volatile__("sti");
+    
     // Get the actual task function from the stack
+    // Note: We stored the function pointer in the task struct's EIP field
+    // purely for storage. It's not used by switch_task (which uses the stack).
     task_func_t func = (task_func_t)current_task->eip;
     
     // Call the task function
@@ -91,17 +96,20 @@ int task_create(task_func_t func) {
     uint32_t* stack = (uint32_t*)task->esp;
     
     // Push registers (as they would be saved by switch_task)
-    *(--stack) = 0x00000202;        // EFLAGS (interrupts enabled)
-    *(--stack) = 0x08;              // CS
-    *(--stack) = (uint32_t)task_entry;  // EIP (return address)
-    *(--stack) = 0;                 // EAX
-    *(--stack) = 0;                 // ECX
-    *(--stack) = 0;                 // EDX
-    *(--stack) = 0;                 // EBX
-    *(--stack) = task->esp;         // ESP
+    // Stack grows downwards, so we push in reverse order of switch_task pops
+    // switch_task pops: EAX, ECX, EDX, EBX, EDI, ESI, EBP, RET
+    // So we push: EBP, ESI, EDI, EBX, EDX, ECX, EAX
+    
+    // Return address for switch_task (pops into EIP)
+    *(--stack) = (uint32_t)task_entry;
+    
     *(--stack) = task->ebp;         // EBP
     *(--stack) = 0;                 // ESI
     *(--stack) = 0;                 // EDI
+    *(--stack) = 0;                 // EBX
+    *(--stack) = 0;                 // EDX
+    *(--stack) = 0;                 // ECX
+    *(--stack) = 0;                 // EAX
     
     task->esp = (uint32_t)stack;
     

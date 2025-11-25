@@ -6,7 +6,7 @@
 [ORG 0x7C00]
 
 KERNEL_OFFSET equ 0x1000    ; Memory location to load kernel
-KERNEL_SECTORS equ 10       ; Number of sectors to load
+KERNEL_SECTORS equ 20       ; Number of sectors to load (10KB)
 
 start:
     ; Initialize segment registers

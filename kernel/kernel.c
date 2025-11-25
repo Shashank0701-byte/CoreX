@@ -9,6 +9,7 @@
 #include "keyboard.h"
 #include "shell.h"
 #include "scheduler.h"
+#include "fs.h"
 
 // VGA text mode constants
 #define VGA_MEMORY 0xB8000
@@ -180,15 +181,21 @@ void kmain() {
     scheduler_init();
     print("\n");
     
+    // Initialize file system
+    // print("Initializing file system...\n");
+    // fs_init();
+    // print("\n");
+    
     // Initialize timer (100 Hz) for task switching
     print("Initializing timer...\n");
-    timer_init(100);
+    // timer_init(100);
+    print("Timer disabled for stability\n");
     print("\n");
     
     // Enable interrupts
-    print("Enabling interrupts...\n");
-    __asm__ __volatile__("sti");
-    print("Interrupts enabled\n\n");
+    // print("Enabling interrupts...\n");
+    // __asm__ __volatile__("sti");
+    // print("Interrupts enabled\n\n");
     
     print("Kernel features:\n");
     print("  - C language kernel\n");
@@ -199,6 +206,7 @@ void kmain() {
     print("  - PS/2 keyboard driver\n");
     print("  - Interactive shell\n");
     print("  - Cooperative task scheduler\n");
+    print("  - In-memory file system\n");
     //print("  - 4KB paging with identity mapping\n");
     //print("  - PIC interrupt controller\n");
     //print("  - PIT timer (100 Hz)\n\n");

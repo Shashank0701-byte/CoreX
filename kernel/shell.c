@@ -4,6 +4,7 @@
 #include "shell.h"
 #include "keyboard.h"
 #include "pmm.h"
+#include "fs.h"
 
 // External functions
 extern void print(const char* str);
@@ -16,12 +17,6 @@ static char input_buffer[SHELL_BUFFER_SIZE];
 static int buffer_pos = 0;
 
 // String utility functions
-static int strlen(const char* str) {
-    int len = 0;
-    while (str[len] != '\0') len++;
-    return len;
-}
-
 static int strcmp(const char* s1, const char* s2) {
     while (*s1 && (*s1 == *s2)) {
         s1++;
@@ -40,13 +35,6 @@ static int strncmp(const char* s1, const char* s2, int n) {
     return *(unsigned char*)s1 - *(unsigned char*)s2;
 }
 
-static void strcpy(char* dest, const char* src) {
-    while (*src) {
-        *dest++ = *src++;
-    }
-    *dest = '\0';
-}
-
 // Print shell prompt
 static void print_prompt() {
     print(SHELL_PROMPT);
@@ -60,6 +48,10 @@ static void cmd_help() {
     print("  meminfo   - Display memory information\n");
     print("  echo      - Echo text to screen\n");
     print("  version   - Show OS version\n");
+    print("  ls        - List files\n");
+    print("  cat       - Display file contents\n");
+    print("  touch     - Create a file\n");
+    print("  rm        - Delete a file\n");
     print("\n");
 }
 
@@ -182,6 +174,83 @@ void shell_execute(const char* command) {
         
     } else if (strcmp(command, "version") == 0) {
         cmd_version();
+        
+    } else if (strcmp(command, "ls") == 0) {
+        // List files
+        fs_list();
+        print("\n");
+        
+    } else if (strncmp(command, "cat ", 4) == 0) {
+        // Display file contents
+        const char* filename = command + 4;
+        char buffer[1024];
+        
+        int size = fs_read(filename, buffer, sizeof(buffer) - 1);
+        if (size >= 0) {
+            print("\n");
+            print(buffer);
+            print("\n\n");
+        } else {
+            print("\n");
+        }
+        
+    } else if (strncmp(command, "touch ", 6) == 0) {
+        // Create file: touch filename content
+        const char* args = command + 6;
+        
+        // Find space between filename and content
+        const char* space = args;
+        while (*space && *space != ' ') space++;
+        
+        if (*space == '\0') {
+            // No content, create empty file
+            char filename[MAX_FILENAME];
+            int i = 0;
+            while (args[i] && i < MAX_FILENAME - 1) {
+                filename[i] = args[i];
+                i++;
+            }
+            filename[i] = '\0';
+            
+            if (fs_create(filename, "") == 0) {
+                print("\nFile created: ");
+                print(filename);
+                print("\n\n");
+            } else {
+                print("\n");
+            }
+        } else {
+            // Extract filename and content
+            char filename[MAX_FILENAME];
+            int i = 0;
+            while (args + i < space && i < MAX_FILENAME - 1) {
+                filename[i] = args[i];
+                i++;
+            }
+            filename[i] = '\0';
+            
+            const char* content = space + 1;
+            
+            if (fs_create(filename, content) == 0) {
+                print("\nFile created: ");
+                print(filename);
+                print("\n\n");
+            } else {
+                print("\n");
+            }
+        }
+        
+    } else if (strncmp(command, "rm ", 3) == 0) {
+        // Delete file
+        const char* filename = command + 3;
+        
+        if (fs_delete(filename) == 0) {
+            print("\nFile deleted: ");
+            print(filename);
+            print("\n\n");
+        } else {
+            print("\n");
+        }
         
     } else if (strncmp(command, "echo ", 5) == 0) {
         // Echo command with arguments
