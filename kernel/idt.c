@@ -212,8 +212,14 @@ void exception_handler(uint32_t int_no, uint32_t err_code) {
 extern void timer_handler();
 extern void keyboard_handler();
 
-void irq_handler() {
-    // Just call keyboard handler directly
-    // (We only have keyboard IRQ enabled anyway)
-    keyboard_handler();
+void irq_handler(uint32_t int_no) {
+    if (int_no == 32) {
+        timer_handler();
+    } else if (int_no == 33) {
+        keyboard_handler();
+    } else {
+        // Gracefully acknowledge any other IRQs if they are ever unmasked.
+        extern void pic_send_eoi(uint8_t irq);
+        pic_send_eoi((uint8_t)(int_no - 32));
+    }
 }

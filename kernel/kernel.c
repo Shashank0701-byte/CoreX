@@ -131,6 +131,12 @@ void kmain() {
     // Initialize PIC
     pic_init();
     
+    // Initialize timer (100 Hz)
+    timer_init(100);
+
+    // Initialize physical memory manager
+    pmm_init();
+
     // Initialize keyboard
     keyboard_init();
     

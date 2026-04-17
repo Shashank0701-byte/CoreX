@@ -108,16 +108,13 @@ isr_common_stub:
     mov fs, ax
     mov gs, ax
     
-    ; Push stack pointer (contains register state)
-    mov eax, esp
+    ; Pass interrupt number and error code to C exception handler
+    mov eax, [esp + 48]      ; interrupt number
+    mov edx, [esp + 52]      ; error code
+    push edx
     push eax
-    
-    ; Call C exception handler
-    ; Arguments: interrupt number, error code (already on stack)
     call _exception_handler
-    
-    ; Clean up pushed arguments
-    pop eax
+    add esp, 8
     
     ; Restore segment registers
     pop gs
@@ -155,8 +152,11 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
     
-    ; Call C IRQ handler (cdecl calling convention)
+    ; Pass interrupt number to C IRQ handler
+    mov eax, [esp + 48]      ; 32 bytes pusha + 16 bytes segment pushes
+    push eax
     call _irq_handler
+    add esp, 4
     
     ; Restore segment registers
     pop gs

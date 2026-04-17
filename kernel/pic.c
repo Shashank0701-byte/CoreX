@@ -39,8 +39,8 @@ void pic_init() {
     outb(PIC1_DATA, 0x01);      // 8086 mode
     outb(PIC2_DATA, 0x01);      // 8086 mode
     
-    // Mask all IRQs except keyboard (IRQ1)
-    outb(PIC1_DATA, 0xFD);      // 11111101 - only IRQ1 unmasked
+    // Unmask timer (IRQ0) and keyboard (IRQ1)
+    outb(PIC1_DATA, 0xFC);      // 11111100 - IRQ0 and IRQ1 unmasked
     outb(PIC2_DATA, 0xFF);      // 11111111 - all slave IRQs masked
 }
 

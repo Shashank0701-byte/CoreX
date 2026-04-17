@@ -1,211 +1,196 @@
-; Enhanced x86 Bootloader with Protected Mode
-; Loads kernel from disk, switches to 32-bit protected mode, and jumps to kernel
-; Must be exactly 512 bytes with boot signature 0xAA55
+; CoreX bootloader — CHS reads only (INT 13h AH=02). Extended LBA (AH=42) can hang on QEMU.
+; KERNEL_SECTORS from kernel/build_info.inc (Makefile pads kernel to whole sectors).
 
 [BITS 16]
 [ORG 0x7C00]
 
-KERNEL_OFFSET equ 0x1000    ; Memory location to load kernel
-KERNEL_SECTORS equ 20       ; Number of sectors to load (10KB)
+%include "build_info.inc"
+
+KERNEL_OFFSET equ 0x10000      ; Above MBR (0x7C00) — prevents self-overwrite
+KERNEL_SEG    equ 0x1000        ; Real-mode segment: 0x1000:0x0000 = 0x10000
+SPT equ 63
+HPC equ 16
 
 start:
-    ; Initialize segment registers
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
-    
-    ; Save boot drive number
+
     mov [boot_drive], dl
 
-    ; Print bootloader message
     mov si, msg_boot
     call print_string
 
-    ; Load kernel from disk
     call load_kernel
 
-    ; Print loaded message
     mov si, msg_loaded
     call print_string
 
-    ; Enable A20 line
     call enable_a20
 
-    ; Load GDT
     cli
     lgdt [gdt_descriptor]
 
-    ; Switch to protected mode
     mov eax, cr0
-    or eax, 0x1         ; Set PE (Protection Enable) bit
+    or eax, 0x1
     mov cr0, eax
 
-    ; Far jump to flush pipeline and enter 32-bit code
     jmp CODE_SEG:protected_mode_start
 
-; ============ 16-bit Functions ============
-
-; Function: load_kernel
+; LBA -> CHS (63 SPT, 16 heads): quot=LBA/63 = C*16+H; S = (LBA%63)+1
+; INT 13h AH=02: AL=count, CH/CL/DH, DL=drive, ES:BX=buffer
 load_kernel:
     pusha
-    
+    xor ax, ax
+    mov ds, ax
+
+    mov ax, KERNEL_SEG
+    mov es, ax                  ; ES = 0x1000
+    xor bx, bx                  ; BX = 0 → ES:BX = 0x1000:0x0000 = physical 0x10000
+    mov word [sectors_left], KERNEL_SECTORS
+    mov si, 1
+
+.read_loop:
+    ; LBA in SI -> CH, CL, DH (save cyl high byte before pop overwrites ax)
+    mov ax, si
+    xor dx, dx
+    mov cx, SPT
+    div cx
+    push dx
+    mov cx, HPC
+    xor dx, dx
+    div cx
+    mov ch, al
+    mov bp, ax
+    mov dh, dl
+    pop ax
+    mov cl, al
+    inc cl
+    mov ax, bp
+    shr ax, 8
+    and al, 0x03
+    shl al, 6
+    or cl, al
+
     mov ah, 0x02
-    mov al, KERNEL_SECTORS
-    mov ch, 0
-    mov cl, 2
-    mov dh, 0
+    mov al, 1
     mov dl, [boot_drive]
-    mov bx, KERNEL_OFFSET
-    
     int 0x13
     jc disk_error
-    
-    cmp al, KERNEL_SECTORS
-    jne disk_error
-    
+
+    add bx, 512
+    jnc .no_es
+    mov ax, es
+    add ax, 0x1000
+    mov es, ax
+.no_es:
+    inc si
+    dec word [sectors_left]
+    jnz .read_loop
+
     popa
     ret
 
 disk_error:
+    xor ax, ax
+    mov ds, ax
     mov si, msg_error
     call print_string
     cli
     hlt
 
-; Function: print_string
 print_string:
     pusha
     mov ah, 0x0E
-
 .loop:
     lodsb
     cmp al, 0
     je .done
     int 0x10
     jmp .loop
-
 .done:
     popa
     ret
 
-; Function: enable_a20
-; Enables A20 line using keyboard controller method
 enable_a20:
     pusha
-    
-    call .wait_input
-    mov al, 0xAD        ; Disable keyboard
+    call .wi
+    mov al, 0xAD
     out 0x64, al
-    
-    call .wait_input
-    mov al, 0xD0        ; Read from input
+    call .wi
+    mov al, 0xD0
     out 0x64, al
-    
-    call .wait_output
+    call .wo
     in al, 0x60
     push ax
-    
-    call .wait_input
-    mov al, 0xD1        ; Write to output
+    call .wi
+    mov al, 0xD1
     out 0x64, al
-    
-    call .wait_input
+    call .wi
     pop ax
-    or al, 2            ; Enable A20 bit
+    or al, 2
     out 0x60, al
-    
-    call .wait_input
-    mov al, 0xAE        ; Enable keyboard
+    call .wi
+    mov al, 0xAE
     out 0x64, al
-    
-    call .wait_input
+    call .wi
     popa
     ret
-
-.wait_input:
+.wi:
     in al, 0x64
     test al, 2
-    jnz .wait_input
+    jnz .wi
     ret
-
-.wait_output:
+.wo:
     in al, 0x64
     test al, 1
-    jz .wait_output
+    jz .wo
     ret
 
-; ============ GDT (Global Descriptor Table) ============
-
 gdt_start:
-
-gdt_null:               ; Null descriptor (required)
-    dd 0x0
-    dd 0x0
-
-gdt_code:               ; Code segment descriptor
-    dw 0xFFFF           ; Limit (bits 0-15)
-    dw 0x0              ; Base (bits 0-15)
-    db 0x0              ; Base (bits 16-23)
-    db 10011010b        ; Access byte: present, ring 0, code, executable, readable
-    db 11001111b        ; Flags + Limit (bits 16-19): 4KB granularity, 32-bit
-    db 0x0              ; Base (bits 24-31)
-
-gdt_data:               ; Data segment descriptor
-    dw 0xFFFF           ; Limit (bits 0-15)
-    dw 0x0              ; Base (bits 0-15)
-    db 0x0              ; Base (bits 16-23)
-    db 10010010b        ; Access byte: present, ring 0, data, writable
-    db 11001111b        ; Flags + Limit (bits 16-19): 4KB granularity, 32-bit
-    db 0x0              ; Base (bits 24-31)
-
+gdt_null:    dd 0, 0
+gdt_code:
+    dw 0xFFFF, 0x0
+    db 0x0, 10011010b, 11001111b, 0x0
+gdt_data:
+    dw 0xFFFF, 0x0
+    db 0x0, 10010010b, 11001111b, 0x0
 gdt_end:
 
 gdt_descriptor:
-    dw gdt_end - gdt_start - 1  ; Size of GDT
-    dd gdt_start                 ; Address of GDT
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
-; GDT segment selectors
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
-; ============ 32-bit Protected Mode Code ============
-
 [BITS 32]
-
 protected_mode_start:
-    ; Set up segment registers for protected mode
     mov ax, DATA_SEG
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    
-    ; Set up stack
     mov ebp, 0x90000
     mov esp, ebp
-
-    ; Print protected mode message (VGA text mode)
-    mov ebx, 0xB8000    ; VGA text buffer
+    mov ebx, 0xB8000
     mov byte [ebx], 'P'
     mov byte [ebx+1], 0x0F
     mov byte [ebx+2], 'M'
     mov byte [ebx+3], 0x0F
-
-    ; Jump to kernel
     jmp KERNEL_OFFSET
-
-; ============ Data Section ============
 
 [BITS 16]
 
-boot_drive      db 0
-msg_boot        db 'CoreX Bootloader v2.0', 0x0D, 0x0A, 'Loading kernel...', 0x0D, 0x0A, 0
-msg_loaded      db 'Kernel loaded! Switching to protected mode...', 0x0D, 0x0A, 0
-msg_error       db 'Disk read error!', 0x0D, 0x0A, 0
+boot_drive    db 0
+sectors_left  dw 0
 
-; Pad to 510 bytes and add boot signature
+msg_boot   db 'CoreX Bootloader v2.0', 0x0D, 0x0A, 'Loading kernel...', 0x0D, 0x0A, 0
+msg_loaded db 'Kernel loaded! Switching to protected mode...', 0x0D, 0x0A, 0
+msg_error  db 'Disk read error!', 0x0D, 0x0A, 0
+
 times 510-($-$$) db 0
 dw 0xAA55

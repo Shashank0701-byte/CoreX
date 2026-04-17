@@ -8,7 +8,7 @@ NASM = nasm
 QEMU = qemu-system-i386
 
 # Flags
-CFLAGS = -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc
+CFLAGS = -m32 -ffreestanding -fno-pie -O2 -Wall -Wextra -Iinclude -nostdlib -nostdinc -mno-sse -mno-sse2 -mno-mmx
 LDFLAGS = -m elf_i386 -T kernel/linker.ld --oformat binary
 ASFLAGS = --32
 
@@ -64,11 +64,6 @@ run: $(KERNEL_BIN)
 debug: $(KERNEL_BIN)
 	$(QEMU) -kernel $(KERNEL_BIN) -s -S
 
-# Clean build artifacts
-clean:
-	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
-	rm -rf $(ISO_DIR) $(ISO_FILE)
-
 # Create bootable ISO (optional)
 iso: $(KERNEL_BIN)
 	mkdir -p $(ISO_DIR)/boot/grub
@@ -81,13 +76,7 @@ iso: $(KERNEL_BIN)
 	echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
 	grub-mkrescue -o $(ISO_FILE) $(ISO_DIR)
 
-# Build bootloader
-bootloader: $(BOOTLOADER_BIN)
-
-$(BOOTLOADER_BIN): bootloader/boot.asm
-	$(NASM) -f bin $< -o $@
-
-# Build kernel entry (assembly stub)
+# Kernel object list (must appear before rules using C_KERNEL_BIN)
 KERNEL_STUB_OBJ = kernel/kernel_stub.o
 KERNEL_C_OBJ = kernel/kernel.o
 IDT_OBJ = kernel/idt.o
@@ -104,6 +93,23 @@ FS_OBJ = kernel/fs.o
 GRAPHICS_OBJ = kernel/graphics.o
 C_KERNEL_BIN = kernel/kernel_c.bin
 C_KERNEL_TMP = kernel/kernel_c.tmp
+
+# Build bootloader
+bootloader: $(BOOTLOADER_BIN)
+
+# Pad kernel to whole sectors, then assemble bootloader with matching sector count
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ)
+	$(LD) -m i386pe -T kernel/linker.ld --image-base 0x0 -o $(C_KERNEL_TMP) $^ --entry=_start
+	objcopy -O binary $(C_KERNEL_TMP) $@
+	@SIZE=$$(wc -c < $@ | tr -d ' '); \
+	PAD=$$(( (512 - SIZE % 512) % 512 )); \
+	if [ $$PAD -ne 0 ]; then dd if=/dev/zero bs=1 count=$$PAD >> $@ 2>/dev/null; fi
+
+$(BOOTLOADER_BIN): bootloader/boot.asm $(C_KERNEL_BIN)
+	@SIZE=$$(wc -c < $(C_KERNEL_BIN) | tr -d ' '); \
+	N=$$(( ($$SIZE + 511) / 512 )); \
+	printf '%%define KERNEL_SECTORS %s\n' "$$N" > kernel/build_info.inc
+	$(NASM) -f bin -Ikernel $< -o $@
 
 $(KERNEL_STUB_OBJ): kernel/kernel_stub.asm
 	$(NASM) -f elf32 $< -o $@
@@ -146,11 +152,6 @@ $(FS_OBJ): kernel/fs.c
 
 $(GRAPHICS_OBJ): kernel/graphics.c
 	$(CC) $(CFLAGS) -c $< -o $@
-
-# Link C kernel (two-step process for Windows)
-$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ)
-	$(LD) -m i386pe -T kernel/linker.ld -o $(C_KERNEL_TMP) $^ --entry=_start
-	objcopy -O binary $(C_KERNEL_TMP) $@
 
 # Build assembly-only kernel (legacy)
 kernel-entry: $(KERNEL_ENTRY_BIN)
