@@ -80,15 +80,25 @@ static void keyboard_buffer_add(char c) {
 
 // Keyboard interrupt handler - USE BUFFER
 void keyboard_handler() {
+    static int extended = 0;
     uint8_t scancode = inb(KEYBOARD_DATA_PORT);
+    
+    // Handle extended prefix
+    if (scancode == 0xE0) {
+        extended = 1;
+        pic_send_eoi(1);
+        return;
+    }
     
     // Handle shift keys
     if (scancode == KEY_LSHIFT || scancode == KEY_RSHIFT) {
         shift_pressed = 1;
+        extended = 0;
         pic_send_eoi(1);
         return;
     } else if (scancode == (KEY_LSHIFT | 0x80) || scancode == (KEY_RSHIFT | 0x80)) {
         shift_pressed = 0;
+        extended = 0;
         pic_send_eoi(1);
         return;
     }
@@ -96,23 +106,37 @@ void keyboard_handler() {
     // Handle Caps Lock
     if (scancode == KEY_CAPSLOCK) {
         caps_lock = !caps_lock;
+        extended = 0;
         pic_send_eoi(1);
         return;
     }
     
     // Only handle key presses (not releases)
     if (!(scancode & 0x80)) {
-        // Convert scancode to ASCII
-        if (scancode < sizeof(scancode_to_ascii)) {
+        if (extended) {
+            // Handle arrow keys
             char ascii = 0;
+            if (scancode == 0x48) ascii = 17; // Up
+            else if (scancode == 0x50) ascii = 18; // Down
+            else if (scancode == 0x4D) ascii = 19; // Right
+            else if (scancode == 0x4B) ascii = 20; // Left
             
-            if (shift_pressed) {
-                ascii = scancode_to_ascii_shift[scancode];
-            } else {
-                ascii = scancode_to_ascii[scancode];
+            if (ascii != 0) {
+                keyboard_buffer_add(ascii);
             }
-            
-            // Apply caps lock for letters
+            extended = 0;
+        } else {
+            // Convert scancode to ASCII
+            if (scancode < sizeof(scancode_to_ascii)) {
+                char ascii = 0;
+                
+                if (shift_pressed) {
+                    ascii = scancode_to_ascii_shift[scancode];
+                } else {
+                    ascii = scancode_to_ascii[scancode];
+                }
+                
+                // Apply caps lock for letters
             if (caps_lock && ascii >= 'a' && ascii <= 'z' && !shift_pressed) {
                 ascii = ascii - 32;
             } else if (caps_lock && ascii >= 'A' && ascii <= 'Z' && shift_pressed) {
@@ -123,6 +147,7 @@ void keyboard_handler() {
                 // Add to buffer (NOT direct putchar!)
                 keyboard_buffer_add(ascii);
             }
+        }
         }
     }
     

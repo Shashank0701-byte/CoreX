@@ -63,6 +63,14 @@ void clear_screen() {
     update_cursor();
 }
 
+// Function: put_char_at
+// Draw a character at a specific location
+void put_char_at(int x, int y, char c, unsigned char color) {
+    if (x >= 0 && x < VGA_WIDTH && y >= 0 && y < VGA_HEIGHT) {
+        vga_buffer[y * VGA_WIDTH + x] = (color << 8) | c;
+    }
+}
+
 // Function: putchar
 // Prints a single character to the screen
 void putchar(char c) {

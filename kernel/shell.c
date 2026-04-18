@@ -16,10 +16,18 @@ extern void print_hex(unsigned int num);
 extern void print_dec(unsigned int num);
 extern void clear_screen();
 extern void print_colored(const char* str, unsigned char color);
+extern void put_char_at(int x, int y, char c, unsigned char color);
+extern uint32_t timer_get_ticks();
 
 // Shell state
 static char input_buffer[SHELL_BUFFER_SIZE];
 static int buffer_pos = 0;
+
+// Command history
+#define HISTORY_MAX 8
+static char history[HISTORY_MAX][SHELL_BUFFER_SIZE];
+static int history_count = 0;
+static int history_index = 0;
 
 // I/O helper
 static inline void outb(unsigned short port, unsigned char value) {
@@ -43,6 +51,19 @@ static int strncmp(const char* s1, const char* s2, int n) {
     }
     if (n == 0) return 0;
     return *(unsigned char*)s1 - *(unsigned char*)s2;
+}
+
+static void strcpy(char* dest, const char* src) {
+    while (*src) {
+        *dest++ = *src++;
+    }
+    *dest = '\0';
+}
+
+static int strlen(const char* str) {
+    int len = 0;
+    while (str[len]) len++;
+    return len;
 }
 
 // Print shell prompt
@@ -70,6 +91,7 @@ static void cmd_help() {
     print("  cat       - Read a file (cat <name>)\n");
     print("  rm        - Delete a file (rm <name>)\n");
     print("  edit      - Simple Text Editor (edit <name>)\n");
+    print("  snake     - Play the Snake Game!\n");
     print("  tasks     - Show running tasks\n");
     print("  gfx       - Graphics mode demo\n");
     print("  reboot    - Reboot the system\n");
@@ -344,6 +366,111 @@ static void cmd_edit(const char* args) {
     }
 }
 
+// Command: snake (Snake Game)
+static void cmd_snake() {
+    int snake_x[200], snake_y[200];
+    int snake_len = 4;
+    int dir_x = 1, dir_y = 0; // Start moving right
+    int food_x = 40, food_y = 12;
+    int game_over = 0;
+    int score = 0;
+    
+    // Initial snake
+    for (int i = 0; i < snake_len; i++) {
+        snake_x[i] = 40 - i;
+        snake_y[i] = 12;
+    }
+    
+    clear_screen();
+    uint32_t last_tick = timer_get_ticks();
+    
+    while (!game_over) {
+        // Render step
+        clear_screen();
+        
+        // Draw borders
+        for (int x = 0; x < 80; x++) {
+            put_char_at(x, 0, '#', 0x07);
+            put_char_at(x, 24, '#', 0x07);
+        }
+        for (int y = 0; y < 25; y++) {
+            put_char_at(0, y, '#', 0x07);
+            put_char_at(79, y, '#', 0x07);
+        }
+        
+        // Draw food (Red 'O')
+        put_char_at(food_x, food_y, 'O', 0x0C);
+        
+        // Draw snake
+        put_char_at(snake_x[0], snake_y[0], '@', 0x0A); // Head (Green)
+        for (int i = 1; i < snake_len; i++) {
+            put_char_at(snake_x[i], snake_y[i], '*', 0x02); // Body (Dark Green)
+        }
+        
+        // Draw score
+        print_colored(" Score: ", 0x0E);
+        print_dec(score);
+        print(" ");
+        
+        // Update logic (wait for tick to control speed)
+        while (timer_get_ticks() - last_tick < 8) {
+            // Process input while waiting
+            if (keyboard_available()) {
+                char c = keyboard_getchar();
+                if (c == 27) { game_over = 1; break; } // ESC
+                else if (c == 17 && dir_y == 0) { dir_x = 0; dir_y = -1; } // Up
+                else if (c == 18 && dir_y == 0) { dir_x = 0; dir_y = 1; }  // Down
+                else if (c == 19 && dir_x == 0) { dir_x = 1; dir_y = 0; }  // Right
+                else if (c == 20 && dir_x == 0) { dir_x = -1; dir_y = 0; } // Left
+            }
+        }
+        last_tick = timer_get_ticks();
+        if (game_over) break;
+        
+        // Calculate next head position
+        int next_x = snake_x[0] + dir_x;
+        int next_y = snake_y[0] + dir_y;
+        
+        // Check wall collision
+        if (next_x <= 0 || next_x >= 79 || next_y <= 0 || next_y >= 24) {
+            game_over = 1;
+        }
+        
+        // Check self collision
+        for (int i = 0; i < snake_len; i++) {
+            if (snake_x[i] == next_x && snake_y[i] == next_y) {
+                game_over = 1;
+            }
+        }
+        
+        if (game_over) break;
+        
+        // Move snake
+        for (int i = snake_len - 1; i > 0; i--) {
+            snake_x[i] = snake_x[i-1];
+            snake_y[i] = snake_y[i-1];
+        }
+        snake_x[0] = next_x;
+        snake_y[0] = next_y;
+        
+        // Check food collision
+        if (next_x == food_x && next_y == food_y) {
+            score++;
+            if (snake_len < 199) snake_len++;
+            
+            // Basic pseudo-random food placement
+            food_x = 1 + (timer_get_ticks() + score * 7) % 78;
+            food_y = 1 + (timer_get_ticks() + score * 11) % 23;
+        }
+    }
+    
+    clear_screen();
+    print_colored("\n--- GAME OVER ---\n", 0x0C);
+    print("Final Score: ");
+    print_dec(score);
+    print("\n\n");
+}
+
 // Command: tasks
 static void cmd_tasks() {
     scheduler_print_tasks();
@@ -431,6 +558,20 @@ void shell_handle_input(char c) {
         input_buffer[buffer_pos] = '\0';
         
         if (buffer_pos > 0) {
+            // Save to history if different from last command
+            if (history_count == 0 || strcmp(input_buffer, history[history_count - 1]) != 0) {
+                if (history_count < HISTORY_MAX) {
+                    strcpy(history[history_count], input_buffer);
+                    history_count++;
+                } else {
+                    for (int i = 0; i < HISTORY_MAX - 1; i++) {
+                        strcpy(history[i], history[i+1]);
+                    }
+                    strcpy(history[HISTORY_MAX - 1], input_buffer);
+                }
+            }
+            history_index = history_count;
+            
             shell_execute(input_buffer);
         }
         
@@ -439,6 +580,38 @@ void shell_handle_input(char c) {
         input_buffer[0] = '\0';
         print_prompt();
         
+    } else if (c == 17) {
+        // Up arrow - previous command
+        if (history_count > 0 && history_index > 0) {
+            history_index--;
+            // Clear current input from screen
+            for (int i = 0; i < buffer_pos; i++) {
+                putchar('\b');
+            }
+            // Load history
+            strcpy(input_buffer, history[history_index]);
+            buffer_pos = strlen(input_buffer);
+            print(input_buffer);
+        }
+    } else if (c == 18) {
+        // Down arrow - next command
+        if (history_count > 0 && history_index < history_count) {
+            history_index++;
+            // Clear current input from screen
+            for (int i = 0; i < buffer_pos; i++) {
+                putchar('\b');
+            }
+            if (history_index == history_count) {
+                // Return to empty prompt
+                input_buffer[0] = '\0';
+                buffer_pos = 0;
+            } else {
+                // Load history
+                strcpy(input_buffer, history[history_index]);
+                buffer_pos = strlen(input_buffer);
+                print(input_buffer);
+            }
+        }
     } else if (c == '\b') {
         // Backspace
         if (buffer_pos > 0) {
@@ -447,7 +620,7 @@ void shell_handle_input(char c) {
             putchar('\b');  // Visual backspace
         }
         
-    } else {
+    } else if (c >= 32 && c <= 126) {
         // Regular character
         if (buffer_pos < SHELL_BUFFER_SIZE - 1) {
             input_buffer[buffer_pos++] = c;
@@ -518,6 +691,9 @@ void shell_execute(const char* command) {
         
     } else if (strncmp(command, "edit ", 5) == 0) {
         cmd_edit(command + 5);
+        
+    } else if (strcmp(command, "snake") == 0) {
+        cmd_snake();
         
     } else {
         // Unknown command
