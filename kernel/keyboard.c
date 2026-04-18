@@ -82,11 +82,43 @@ static void keyboard_buffer_add(char c) {
 void keyboard_handler() {
     uint8_t scancode = inb(KEYBOARD_DATA_PORT);
     
+    // Handle shift keys
+    if (scancode == KEY_LSHIFT || scancode == KEY_RSHIFT) {
+        shift_pressed = 1;
+        pic_send_eoi(1);
+        return;
+    } else if (scancode == (KEY_LSHIFT | 0x80) || scancode == (KEY_RSHIFT | 0x80)) {
+        shift_pressed = 0;
+        pic_send_eoi(1);
+        return;
+    }
+    
+    // Handle Caps Lock
+    if (scancode == KEY_CAPSLOCK) {
+        caps_lock = !caps_lock;
+        pic_send_eoi(1);
+        return;
+    }
+    
     // Only handle key presses (not releases)
     if (!(scancode & 0x80)) {
-        // Convert scancode to ASCII (simple version)
+        // Convert scancode to ASCII
         if (scancode < sizeof(scancode_to_ascii)) {
-            char ascii = scancode_to_ascii[scancode];
+            char ascii = 0;
+            
+            if (shift_pressed) {
+                ascii = scancode_to_ascii_shift[scancode];
+            } else {
+                ascii = scancode_to_ascii[scancode];
+            }
+            
+            // Apply caps lock for letters
+            if (caps_lock && ascii >= 'a' && ascii <= 'z' && !shift_pressed) {
+                ascii = ascii - 32;
+            } else if (caps_lock && ascii >= 'A' && ascii <= 'Z' && shift_pressed) {
+                ascii = ascii + 32;
+            }
+            
             if (ascii != 0) {
                 // Add to buffer (NOT direct putchar!)
                 keyboard_buffer_add(ascii);

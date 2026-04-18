@@ -21,6 +21,12 @@
 static unsigned short* vga_buffer = (unsigned short*)VGA_MEMORY;
 static unsigned int cursor_x = 0;
 static unsigned int cursor_y = 0;
+static unsigned char current_color = WHITE_ON_BLACK;
+
+// Color functions
+void set_color(unsigned char color) {
+    current_color = color;
+}
 
 // Port I/O functions
 static inline void outb(unsigned short port, unsigned char value) {
@@ -50,7 +56,7 @@ void update_cursor() {
 // Clears the VGA text mode screen
 void clear_screen() {
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        vga_buffer[i] = (WHITE_ON_BLACK << 8) | ' ';
+        vga_buffer[i] = (current_color << 8) | ' ';
     }
     cursor_x = 0;
     cursor_y = 0;
@@ -68,11 +74,11 @@ void putchar(char c) {
         if (cursor_x > 0) {
             cursor_x--;
             unsigned int offset = cursor_y * VGA_WIDTH + cursor_x;
-            vga_buffer[offset] = (WHITE_ON_BLACK << 8) | ' ';
+            vga_buffer[offset] = (current_color << 8) | ' ';
         }
     } else {
         unsigned int offset = cursor_y * VGA_WIDTH + cursor_x;
-        vga_buffer[offset] = (WHITE_ON_BLACK << 8) | c;
+        vga_buffer[offset] = (current_color << 8) | c;
         cursor_x++;
         
         if (cursor_x >= VGA_WIDTH) {
@@ -90,7 +96,7 @@ void putchar(char c) {
         }
         // Clear last line
         for (int i = (VGA_HEIGHT - 1) * VGA_WIDTH; i < VGA_HEIGHT * VGA_WIDTH; i++) {
-            vga_buffer[i] = (WHITE_ON_BLACK << 8) | ' ';
+            vga_buffer[i] = (current_color << 8) | ' ';
         }
     }
     
@@ -104,6 +110,14 @@ void print(const char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
         putchar(str[i]);
     }
+}
+
+// Function: print_colored
+void print_colored(const char* str, unsigned char color) {
+    unsigned char old = current_color;
+    current_color = color;
+    print(str);
+    current_color = old;
 }
 
 // Function: print_hex
@@ -142,7 +156,8 @@ void kmain() {
     clear_screen();
     
     // Print welcome message
-    print("CoreX OS v3.0\n\n");
+    print_colored("CoreX OS v3.0\n\n", 0x0B); // Light Cyan
+
     
     // Initialize IDT
     idt_init();

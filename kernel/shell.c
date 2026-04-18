@@ -15,6 +15,7 @@ extern void putchar(char c);
 extern void print_hex(unsigned int num);
 extern void print_dec(unsigned int num);
 extern void clear_screen();
+extern void print_colored(const char* str, unsigned char color);
 
 // Shell state
 static char input_buffer[SHELL_BUFFER_SIZE];
@@ -46,7 +47,7 @@ static int strncmp(const char* s1, const char* s2, int n) {
 
 // Print shell prompt
 static void print_prompt() {
-    print(SHELL_PROMPT);
+    print_colored(SHELL_PROMPT, 0x0A); // Light Green
 }
 
 // ====== Built-in Commands ======
@@ -59,8 +60,10 @@ static void cmd_help() {
     print("  help      - Show this help message\n");
     print("  clear     - Clear the screen\n");
     print("  version   - Show OS version\n");
+    print("  sysinfo   - Show system information\n");
     print("  uptime    - Show system uptime\n");
     print("  meminfo   - Display memory information\n");
+    print("  calc      - Simple calculator (calc <num> <op> <num>)\n");
     print("  echo      - Echo text to screen\n");
     print("  ls        - List files\n");
     print("  touch     - Create a file (touch <name> <content>)\n");
@@ -134,6 +137,80 @@ static void cmd_uptime() {
     print("s (");
     print_dec(ticks);
     print(" ticks)\n\n");
+}
+
+// Command: sysinfo
+static void cmd_sysinfo() {
+    print("\n");
+    print_colored("--- System Information ---\n", 0x0B);
+    print("OS Version:    CoreX OS v3.2\n");
+    print("CPU Mode:      32-bit Protected Mode\n");
+    print("Memory:        ");
+    print_dec(pmm_get_total_pages() * 4);
+    print(" KB Total, ");
+    print_dec(pmm_get_free_pages() * 4);
+    print(" KB Free\n");
+    print("Timer Freq:    100 Hz\n");
+    print("Scheduler:     Cooperative (Round-Robin)\n");
+    print("Filesystem:    In-Memory Array\n");
+    print("--------------------------\n\n");
+}
+
+// Command: calc
+static void cmd_calc(const char* args) {
+    int num1 = 0, num2 = 0;
+    char op = 0;
+    const char* ptr = args;
+    
+    // Skip spaces
+    while (*ptr == ' ') ptr++;
+    
+    // Parse first number
+    while (*ptr >= '0' && *ptr <= '9') {
+        num1 = num1 * 10 + (*ptr - '0');
+        ptr++;
+    }
+    
+    // Skip spaces
+    while (*ptr == ' ') ptr++;
+    
+    // Get operator
+    if (*ptr == '+' || *ptr == '-' || *ptr == '*') {
+        op = *ptr++;
+    } else {
+        print_colored("\nError: Invalid operator. Use +, -, or *\n\n", 0x0C);
+        return;
+    }
+    
+    // Skip spaces
+    while (*ptr == ' ') ptr++;
+    
+    // Parse second number
+    if (!(*ptr >= '0' && *ptr <= '9')) {
+        print_colored("\nError: Missing second number\n\n", 0x0C);
+        return;
+    }
+    
+    while (*ptr >= '0' && *ptr <= '9') {
+        num2 = num2 * 10 + (*ptr - '0');
+        ptr++;
+    }
+    
+    print("\nResult: ");
+    if (op == '+') {
+        print_dec(num1 + num2);
+    } else if (op == '-') {
+        // Handle negative result slightly gracefully by preventing it for now
+        if (num1 < num2) {
+            print("-");
+            print_dec(num2 - num1);
+        } else {
+            print_dec(num1 - num2);
+        }
+    } else if (op == '*') {
+        print_dec(num1 * num2);
+    }
+    print("\n\n");
 }
 
 // Command: ls (list files)
@@ -270,9 +347,9 @@ void shell_init() {
     input_buffer[0] = '\0';
     
     print("\n");
-    print("========================================\n");
-    print("  Welcome to CoreX OS Shell v1.0\n");
-    print("========================================\n");
+    print_colored("========================================\n", 0x0B);
+    print_colored("  Welcome to CoreX OS Shell v1.0\n", 0x0E); // Yellow
+    print_colored("========================================\n", 0x0B);
     print("\nType 'help' for available commands\n\n");
     
     print_prompt();
@@ -338,6 +415,9 @@ void shell_execute(const char* command) {
     } else if (strcmp(command, "uptime") == 0) {
         cmd_uptime();
         
+    } else if (strcmp(command, "sysinfo") == 0) {
+        cmd_sysinfo();
+        
     } else if (strcmp(command, "ls") == 0) {
         cmd_ls();
         
@@ -356,6 +436,9 @@ void shell_execute(const char* command) {
     } else if (strcmp(command, "echo") == 0) {
         print("\n\n");
         
+    } else if (strncmp(command, "calc ", 5) == 0) {
+        cmd_calc(command + 5);
+        
     } else if (strncmp(command, "touch ", 6) == 0) {
         cmd_touch(command + 6);
         
@@ -367,7 +450,7 @@ void shell_execute(const char* command) {
         
     } else {
         // Unknown command
-        print("\nUnknown command: ");
+        print_colored("\nUnknown command: ", 0x0C); // Light Red
         print(command);
         print("\nType 'help' for available commands\n\n");
     }
