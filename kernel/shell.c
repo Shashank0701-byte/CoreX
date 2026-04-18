@@ -69,6 +69,7 @@ static void cmd_help() {
     print("  touch     - Create a file (touch <name> <content>)\n");
     print("  cat       - Read a file (cat <name>)\n");
     print("  rm        - Delete a file (rm <name>)\n");
+    print("  edit      - Simple Text Editor (edit <name>)\n");
     print("  tasks     - Show running tasks\n");
     print("  gfx       - Graphics mode demo\n");
     print("  reboot    - Reboot the system\n");
@@ -276,6 +277,73 @@ static void cmd_rm(const char* args) {
     }
 }
 
+// Command: edit (text editor)
+static void cmd_edit(const char* args) {
+    char buffer[1024];
+    int len = 0;
+    
+    if (*args == '\0') {
+        print("\nUsage: edit <filename>\n\n");
+        return;
+    }
+    
+    // Try to load existing file
+    if (fs_read(args, buffer, sizeof(buffer) - 1) >= 0) {
+        while (buffer[len] != '\0' && len < 1023) {
+            len++;
+        }
+    } else {
+        buffer[0] = '\0';
+    }
+    
+    while (1) {
+        clear_screen();
+        
+        // Draw header
+        print_colored("--- CoreX Editor --- File: ", 0x0B);
+        print_colored(args, 0x0E);
+        print_colored(" --- [Press ESC to Save & Exit] ---\n\n", 0x0B);
+        
+        // Print file content
+        print(buffer);
+        
+        // Print cursor block
+        print_colored("_", 0x0A);
+        
+        // Wait for key
+        while (!keyboard_available()) {
+            __asm__ __volatile__("hlt");
+        }
+        
+        char c = keyboard_getchar();
+        
+        if (c == 27) { // ESC key
+            break;
+        } else if (c == '\b') {
+            if (len > 0) {
+                len--;
+                buffer[len] = '\0';
+            }
+        } else if (c >= 32 || c == '\n') { // Printable char or newline
+            if (len < 1022) {
+                buffer[len] = c;
+                len++;
+                buffer[len] = '\0';
+            }
+        }
+    }
+    
+    // Save file
+    fs_delete(args); // Delete if it already exists
+    
+    clear_screen();
+    if (fs_create(args, buffer) == 0) {
+        print("File saved successfully.\n\n");
+    } else {
+        print_colored("Error: Failed to save file.\n\n", 0x0C);
+    }
+}
+
 // Command: tasks
 static void cmd_tasks() {
     scheduler_print_tasks();
@@ -447,6 +515,9 @@ void shell_execute(const char* command) {
         
     } else if (strncmp(command, "rm ", 3) == 0) {
         cmd_rm(command + 3);
+        
+    } else if (strncmp(command, "edit ", 5) == 0) {
+        cmd_edit(command + 5);
         
     } else {
         // Unknown command

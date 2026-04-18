@@ -29,7 +29,7 @@ static inline uint8_t inb(uint16_t port) {
 
 // US QWERTY scancode to ASCII table (without shift)
 static const char scancode_to_ascii[] = {
-    0,   0,   '1', '2', '3', '4', '5', '6',     // 0x00-0x07
+    0,   27,  '1', '2', '3', '4', '5', '6',     // 0x00-0x07 (0x01 = ESC)
     '7', '8', '9', '0', '-', '=', '\b', '\t',   // 0x08-0x0F
     'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',     // 0x10-0x17
     'o', 'p', '[', ']', '\n', 0,   'a', 's',    // 0x18-0x1F
@@ -44,7 +44,7 @@ static const char scancode_to_ascii[] = {
 
 // US QWERTY scancode to ASCII table (with shift)
 static const char scancode_to_ascii_shift[] = {
-    0,   0,   '!', '@', '#', '$', '%', '^',     // 0x00-0x07
+    0,   27,  '!', '@', '#', '$', '%', '^',     // 0x00-0x07 (0x01 = ESC)
     '&', '*', '(', ')', '_', '+', '\b', '\t',   // 0x08-0x0F
     'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',     // 0x10-0x17
     'O', 'P', '{', '}', '\n', 0,   'A', 'S',    // 0x18-0x1F
