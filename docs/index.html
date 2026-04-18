@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreX OS Web Emulator</title>
+    <!-- Use unpkg for v86 library -->
+    <script src="https://unpkg.com/v86@0.3.0/build/libv86.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #screen_container {
+            width: 720px;
+            height: 400px;
+            background-color: #000;
+            border: 2px solid #444;
+            margin-top: 20px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h1 { margin-bottom: 5px; color: #4ade80; }
+        p { color: #888; margin-bottom: 20px; }
+        .instructions {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            max-width: 600px;
+            text-align: left;
+            line-height: 1.6;
+        }
+        kbd {
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>CoreX OS Web Emulator</h1>
+    <p>A custom 32-bit x86 operating system booting live in your browser using v86.</p>
+    
+    <div class="instructions">
+        <strong>Quick Guide:</strong>
+        <ul>
+            <li>Click on the terminal below to capture your keyboard.</li>
+            <li>Press <kbd>ESC</kbd> to release your mouse/keyboard.</li>
+            <li>Try typing <kbd>help</kbd> to see available commands.</li>
+            <li>Try <kbd>snake</kbd> to play the built-in game!</li>
+        </ul>
+    </div>
+
+    <!-- The emulator screen -->
+    <div id="screen_container">
+        <div style="white-space: pre; font: 16px monospace; line-height: 16px"></div>
+        <canvas style="display: none"></canvas>
+    </div>
+
+    <script>
+        window.onload = function() {
+            var emulator = new V86Starter({
+                wasm_path: "https://unpkg.com/v86@0.3.0/build/v86.wasm",
+                memory_size: 32 * 1024 * 1024,
+                vga_memory_size: 2 * 1024 * 1024,
+                screen_container: document.getElementById("screen_container"),
+                bios: {
+                    url: "https://unpkg.com/v86@0.3.0/bios/seabios.bin",
+                },
+                vga_bios: {
+                    url: "https://unpkg.com/v86@0.3.0/bios/vgabios.bin",
+                },
+                fda: {
+                    url: "os-image.bin",
+                    async: true
+                },
+                autostart: true,
+            });
+        };
+    </script>
+</body>
+</html>

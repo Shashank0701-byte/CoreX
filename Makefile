@@ -181,10 +181,15 @@ run-os: $(OS_IMAGE)
 test-bootloader: $(BOOTLOADER_BIN)
 	$(QEMU) -drive format=raw,file=$(BOOTLOADER_BIN)
 
+# Create web version
+web: os-image-c
+	mkdir -p docs
+	cp $(OS_IMAGE) docs/os-image.bin
+
 # Clean build artifacts
 clean:
 	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
 	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
-.PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader
+.PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader web
