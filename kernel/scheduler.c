@@ -174,3 +174,33 @@ uint32_t get_current_task_id() {
     }
     return 0;
 }
+
+// Print task list
+void scheduler_print_tasks() {
+    int count = 0;
+
+    print("\nTask List:\n");
+    print("  ID            State\n");
+    print("  -----------------------\n");
+
+    for (int i = 0; i < MAX_TASKS; i++) {
+        if (tasks[i].state != TASK_TERMINATED) {
+            print("  ");
+            print_hex(tasks[i].id);
+            print("    ");
+
+            switch (tasks[i].state) {
+                case TASK_READY:   print("READY"); break;
+                case TASK_RUNNING: print("RUNNING"); break;
+                case TASK_BLOCKED: print("BLOCKED"); break;
+                default:           print("UNKNOWN"); break;
+            }
+            print("\n");
+            count++;
+        }
+    }
+
+    print("\nActive tasks: ");
+    print_hex(count);
+    print("\n\n");
+}

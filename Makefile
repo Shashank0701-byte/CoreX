@@ -98,7 +98,7 @@ C_KERNEL_TMP = kernel/kernel_c.tmp
 bootloader: $(BOOTLOADER_BIN)
 
 # Pad kernel to whole sectors, then assemble bootloader with matching sector count
-$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ)
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ)
 	$(LD) -m i386pe -T kernel/linker.ld --image-base 0x0 -o $(C_KERNEL_TMP) $^ --entry=_start
 	objcopy -O binary $(C_KERNEL_TMP) $@
 	@SIZE=$$(wc -c < $@ | tr -d ' '); \

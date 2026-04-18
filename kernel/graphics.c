@@ -79,6 +79,14 @@ void graphics_set_mode_13h() {
     #define VGA_AC_READ         0x3C1
     #define VGA_INSTAT_READ     0x3DA
     
+    // Standard VGA Mode 13h register values
+    uint8_t crtc_regs[] = {
+        0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
+        0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9C, 0x8E, 0x8F, 0x28, 0x00, 0x96, 0xB9, 0xA3,
+        0xFF
+    };
+    
     // Miscellaneous register
     outb(VGA_MISC_WRITE, 0x63);
     
@@ -93,19 +101,13 @@ void graphics_set_mode_13h() {
     outb(VGA_CRTC_INDEX, 0x03); outb(VGA_CRTC_DATA, inb(VGA_CRTC_DATA) | 0x80);
     outb(VGA_CRTC_INDEX, 0x11); outb(VGA_CRTC_DATA, inb(VGA_CRTC_DATA) & ~0x80);
     
-    // CRTC registers
-    uint8_t crtc_regs[] = {
-        0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
-        0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
-        0xFF
-    };
+    // Write CRTC
     for (int i = 0; i < 25; i++) {
         outb(VGA_CRTC_INDEX, i);
         outb(VGA_CRTC_DATA, crtc_regs[i]);
     }
     
-    // Graphics Controller registers
+    // Graphics Controller
     outb(VGA_GC_INDEX, 0x00); outb(VGA_GC_DATA, 0x00);
     outb(VGA_GC_INDEX, 0x01); outb(VGA_GC_DATA, 0x00);
     outb(VGA_GC_INDEX, 0x02); outb(VGA_GC_DATA, 0x00);
@@ -116,8 +118,8 @@ void graphics_set_mode_13h() {
     outb(VGA_GC_INDEX, 0x07); outb(VGA_GC_DATA, 0x0F);
     outb(VGA_GC_INDEX, 0x08); outb(VGA_GC_DATA, 0xFF);
     
-    // Attribute Controller registers
-    inb(VGA_INSTAT_READ); // Reset flip-flop
+    // Attribute Controller
+    inb(VGA_INSTAT_READ);
     for (int i = 0; i < 16; i++) {
         outb(VGA_AC_INDEX, i);
         outb(VGA_AC_WRITE, i);
@@ -281,7 +283,9 @@ void graphics_draw_char(int x, int y, char c, uint8_t color) {
     for (int row = 0; row < 8; row++) {
         uint8_t line = font_8x8[index][row];
         for (int col = 0; col < 8; col++) {
-            if (line & (1 << (7 - col))) {
+            // Using (1 << col) instead of (1 << (7 - col)) because the 
+            // font array has been verified to be horizontally mirrored.
+            if (line & (1 << col)) {
                 graphics_putpixel(x + col, y + row, color);
             }
         }

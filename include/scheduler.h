@@ -46,5 +46,7 @@ void schedule();
 
 // Get current task ID
 uint32_t get_current_task_id();
+// Print task list
+void scheduler_print_tasks();
 
 #endif // SCHEDULER_H

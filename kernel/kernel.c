@@ -117,6 +117,25 @@ void print_hex(unsigned int num) {
     }
 }
 
+// Function: print_dec
+// Prints a decimal number
+void print_dec(unsigned int num) {
+    if (num == 0) {
+        putchar('0');
+        return;
+    }
+    
+    char buf[10];
+    int i = 0;
+    while (num > 0) {
+        buf[i++] = '0' + (num % 10);
+        num /= 10;
+    }
+    while (i > 0) {
+        putchar(buf[--i]);
+    }
+}
+
 // Kernel main entry point
 void kmain() {
     // Clear the screen
@@ -137,8 +156,17 @@ void kmain() {
     // Initialize physical memory manager
     pmm_init();
 
+    // Initialize paging (identity maps first 4MB)
+    paging_init();
+
     // Initialize keyboard
     keyboard_init();
+
+    // Initialize in-memory filesystem
+    fs_init();
+
+    // Initialize cooperative scheduler
+    scheduler_init();
     
     // Enable interrupts
     __asm__ __volatile__("sti");

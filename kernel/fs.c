@@ -8,9 +8,7 @@ extern void print(const char* str);
 extern void print_hex(unsigned int num);
 
 // File system storage
-// Store at fixed memory location 0x20000 (128KB) to avoid increasing kernel binary size
-#define FS_MEMORY_START 0x20000
-static file_t* files = (file_t*)FS_MEMORY_START;
+static file_t files[MAX_FILES];
 static int fs_initialized = 0;
 
 // String utility functions
