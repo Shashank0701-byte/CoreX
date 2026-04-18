@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoreX OS Web Emulator</title>
-    <!-- Use unpkg for v86 library -->
-    <script src="https://unpkg.com/v86@latest/build/libv86.js"></script>
+    <script src="build/libv86.js"></script>
     <style>
         body {
             background-color: #1a1a1a;
@@ -67,15 +66,15 @@
     <script>
         window.onload = function() {
             var emulator = new V86({
-                wasm_path: "https://unpkg.com/v86@latest/build/v86.wasm",
+                wasm_path: "build/v86.wasm",
                 memory_size: 32 * 1024 * 1024,
                 vga_memory_size: 2 * 1024 * 1024,
                 screen_container: document.getElementById("screen_container"),
                 bios: {
-                    url: "https://unpkg.com/v86@latest/bios/seabios.bin",
+                    url: "bios/seabios.bin",
                 },
                 vga_bios: {
-                    url: "https://unpkg.com/v86@latest/bios/vgabios.bin",
+                    url: "bios/vgabios.bin",
                 },
                 fda: {
                     url: "os-image.bin",
