@@ -8,8 +8,8 @@
 
 KERNEL_OFFSET equ 0x10000      ; Above MBR (0x7C00) — prevents self-overwrite
 KERNEL_SEG    equ 0x1000        ; Real-mode segment: 0x1000:0x0000 = 0x10000
-SPT equ 63
-HPC equ 16
+SPT equ 18
+HPC equ 2
 
 start:
     xor ax, ax
@@ -28,7 +28,7 @@ start:
     mov si, msg_loaded
     call print_string
 
-    call enable_a20
+    ; call enable_a20 ; SeaBIOS already enables A20, legacy method hangs in v86 emulator
 
     cli
     lgdt [gdt_descriptor]

@@ -162,6 +162,9 @@ $(KERNEL_ENTRY_BIN): kernel/kernel_entry.asm
 # Create bootable OS image with C kernel
 os-image-c: $(BOOTLOADER_BIN) $(C_KERNEL_BIN)
 	cat $(BOOTLOADER_BIN) $(C_KERNEL_BIN) > $(OS_IMAGE)
+	@SIZE=$$(wc -c < $(OS_IMAGE) | tr -d ' '); \
+	PAD=$$(( 1474560 - SIZE )); \
+	if [ $$PAD -gt 0 ]; then dd if=/dev/zero bs=1 count=$$PAD >> $(OS_IMAGE) 2>/dev/null; fi
 
 # Create bootable OS image with assembly kernel (legacy)
 os-image: $(OS_IMAGE)
