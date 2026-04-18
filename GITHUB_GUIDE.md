@@ -1,41 +1,40 @@
-# How to Push CoreX OS to GitHub
+# Repository Management and Publication Guide
 
-## Step 1: Initialize Git Repository
+## Phase 1: Repository Initialization and Structure
+
+Ensure the local repository is configured and synchronized with the remote origin.
+
 ```bash
 cd /d/ResumeProjects/CoreX
 git init
 git add .
-git commit -m "Initial commit: CoreX OS - Custom x86 Operating System
-
-Features:
-- Custom bootloader in x86 Assembly
-- 32-bit protected mode kernel in C
-- IDT with exception and IRQ handlers
-- Physical memory manager with paging support
-- VGA text mode driver
-- PS/2 keyboard driver
-- Interactive shell with built-in commands
-- In-memory file system
-"
+git commit -m "chore: initialize CoreX OS repository"
 ```
 
-## Step 2: Create GitHub Repository
-1. Go to https://github.com/new
-2. Repository name: `CoreX-OS` or `custom-x86-os`
-3. Description: "A custom 32-bit x86 operating system built from scratch in C and Assembly"
-4. Make it **Public** (for resume visibility)
-5. **Don't** initialize with README (we already have one)
-6. Click "Create repository"
+## Phase 2: Remote Configuration
 
-## Step 3: Push to GitHub
+Establish the GitHub repository to host the project.
+
+1. Navigate to https://github.com/new
+2. Designate the repository name: `CoreX-OS` or `custom-x86-os`
+3. Provide the description: "A custom 32-bit x86 operating system built from scratch in C and Assembly."
+4. Ensure the repository visibility is set to Public for portfolio integration.
+5. Bypass initialization options (README, .gitignore, license) as they are locally provisioned.
+6. Execute repository creation.
+
+## Phase 3: Upstream Synchronization
+
+Push the local repository state to the remote origin.
+
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/CoreX-OS.git
+git remote add origin https://github.com/Shashank0701-byte/CoreX.git
 git branch -M main
 git push -u origin main
 ```
 
-## Step 4: Add Topics/Tags on GitHub
-After pushing, go to your repository page and add these topics:
+## Phase 4: Discoverability Optimization
+
+Enhance repository discoverability by applying relevant technical topics via the GitHub interface:
 - `operating-system`
 - `os-development`
 - `x86`
@@ -45,28 +44,23 @@ After pushing, go to your repository page and add these topics:
 - `bootloader`
 - `osdev`
 
-## Step 5: Take Screenshots
-Before pushing, take screenshots of:
-1. OS booting (showing initialization messages)
-2. Shell interface (showing the prompt)
-3. Demo mode running (if you implement it)
+## Phase 5: Documentation Assets
 
-Save them in a `docs/` folder and reference them in README.md
+Ensure comprehensive visual documentation is available prior to final deployment. Capture and store the following in the `docs/` directory:
+1. Boot sequence and subsystem initialization.
+2. Interactive shell interface.
+3. Subsystem demonstrations (e.g., text editor, scheduling processes, graphics mode).
 
-## Step 6: Add to Resume
-On your resume, add:
+## Phase 6: Portfolio Integration
+
+Incorporate the project into professional resumes utilizing the following format:
 
 **CoreX OS** | [GitHub Link]
-- Developed a custom 32-bit x86 operating system from scratch using C and x86 Assembly
-- Implemented bootloader, protected mode kernel, interrupt handling, and memory management
-- Built VGA driver, keyboard driver, and interactive shell with command parsing
-- Demonstrates deep understanding of low-level systems programming and OS architecture
+- Architected a custom 32-bit x86 operating system from scratch utilizing C and x86 Assembly.
+- Engineered a custom bootloader, protected mode kernel, hardware interrupt handling (IDT/PIC), and physical memory management systems.
+- Developed low-level drivers (VGA, PS/2 Keyboard, PIT Timer) alongside an interactive shell featuring process scheduling, an in-memory filesystem, and a full-screen text editor.
+- Demonstrated comprehensive understanding of low-level systems programming, hardware abstraction, and operating system architecture.
 
-## Optional: Create a Demo Video
-Record a quick video showing:
-1. Building the OS
-2. Running in QEMU
-3. OS booting
-4. Shell displaying
+## Optional Enhancement: Video Demonstration
 
-Upload to YouTube and link in README!
+Record a concise demonstration detailing the compilation process, virtualization via QEMU, and operational capabilities of the OS shell. Host the demonstration on a suitable platform and integrate the reference link into the primary README.
