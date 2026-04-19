@@ -93,6 +93,7 @@ static void cmd_help() {
     print("  edit      - Simple Text Editor (edit <name>)\n");
     print("  snake     - Play the Snake Game!\n");
     print("  tetris    - Play the Tetris Game!\n");
+    print("  pong      - Play Pong (1 or 2 players)!\n");
     print("  tasks     - Show running tasks\n");
     print("  gfx       - Graphics mode demo\n");
     print("  reboot    - Reboot the system\n");
@@ -699,6 +700,10 @@ void shell_execute(const char* command) {
     } else if (strcmp(command, "tetris") == 0) {
         extern void cmd_tetris();
         cmd_tetris();
+        
+    } else if (strcmp(command, "pong") == 0) {
+        extern void cmd_pong();
+        cmd_pong();
         
     } else {
         // Unknown command
