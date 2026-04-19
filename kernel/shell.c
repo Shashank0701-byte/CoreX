@@ -92,6 +92,7 @@ static void cmd_help() {
     print("  rm        - Delete a file (rm <name>)\n");
     print("  edit      - Simple Text Editor (edit <name>)\n");
     print("  snake     - Play the Snake Game!\n");
+    print("  tetris    - Play the Tetris Game!\n");
     print("  tasks     - Show running tasks\n");
     print("  gfx       - Graphics mode demo\n");
     print("  reboot    - Reboot the system\n");
@@ -694,6 +695,10 @@ void shell_execute(const char* command) {
         
     } else if (strcmp(command, "snake") == 0) {
         cmd_snake();
+        
+    } else if (strcmp(command, "tetris") == 0) {
+        extern void cmd_tetris();
+        cmd_tetris();
         
     } else {
         // Unknown command
