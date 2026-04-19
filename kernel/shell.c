@@ -94,6 +94,7 @@ static void cmd_help() {
     print("  snake     - Play the Snake Game!\n");
     print("  tetris    - Play the Tetris Game!\n");
     print("  pong      - Play Pong (1 or 2 players)!\n");
+    print("  breakout  - GUI Breakout Game (Mode 13h)\n");
     print("  tasks     - Show running tasks\n");
     print("  gfx       - Graphics mode demo\n");
     print("  reboot    - Reboot the system\n");
@@ -704,6 +705,10 @@ void shell_execute(const char* command) {
     } else if (strcmp(command, "pong") == 0) {
         extern void cmd_pong();
         cmd_pong();
+        
+    } else if (strcmp(command, "breakout") == 0) {
+        extern void cmd_breakout();
+        cmd_breakout();
         
     } else {
         // Unknown command
