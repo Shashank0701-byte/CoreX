@@ -94,6 +94,7 @@ GRAPHICS_OBJ = kernel/graphics.o
 TETRIS_OBJ = kernel/tetris.o
 PONG_OBJ = kernel/pong.o
 BREAKOUT_OBJ = kernel/breakout.o
+MINESWEEPER_OBJ = kernel/minesweeper.o
 C_KERNEL_BIN = kernel/kernel_c.bin
 C_KERNEL_TMP = kernel/kernel_c.tmp
 
@@ -101,7 +102,7 @@ C_KERNEL_TMP = kernel/kernel_c.tmp
 bootloader: $(BOOTLOADER_BIN)
 
 # Pad kernel to whole sectors, then assemble bootloader with matching sector count
-$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ) $(TETRIS_OBJ) $(PONG_OBJ) $(BREAKOUT_OBJ)
+$(C_KERNEL_BIN): $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ) $(TETRIS_OBJ) $(PONG_OBJ) $(BREAKOUT_OBJ) $(MINESWEEPER_OBJ)
 	$(LD) -m i386pe -T kernel/linker.ld --image-base 0x0 -o $(C_KERNEL_TMP) $^ --entry=_start
 	objcopy -O binary $(C_KERNEL_TMP) $@
 	@SIZE=$$(wc -c < $@ | tr -d ' '); \
@@ -165,6 +166,9 @@ $(PONG_OBJ): kernel/pong.c
 $(BREAKOUT_OBJ): kernel/breakout.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(MINESWEEPER_OBJ): kernel/minesweeper.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Build assembly-only kernel (legacy)
 kernel-entry: $(KERNEL_ENTRY_BIN)
 
@@ -204,7 +208,7 @@ web: os-image-c
 # Clean build artifacts
 clean:
 	rm -f $(ALL_OBJECTS) $(KERNEL_BIN) $(BOOTLOADER_BIN) $(KERNEL_ENTRY_BIN) $(OS_IMAGE)
-	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ) $(TETRIS_OBJ) $(PONG_OBJ) $(BREAKOUT_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
+	rm -f $(KERNEL_STUB_OBJ) $(KERNEL_C_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(PIC_OBJ) $(TIMER_OBJ) $(PMM_OBJ) $(PAGING_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ) $(SCHEDULER_OBJ) $(SWITCH_OBJ) $(FS_OBJ) $(GRAPHICS_OBJ) $(TETRIS_OBJ) $(PONG_OBJ) $(BREAKOUT_OBJ) $(MINESWEEPER_OBJ) $(C_KERNEL_BIN) $(C_KERNEL_TMP)
 	rm -rf $(ISO_DIR) $(ISO_FILE)
 
 .PHONY: all run debug clean iso bootloader kernel-entry os-image os-image-c run-os run-c-os test-bootloader web
